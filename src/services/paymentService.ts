@@ -1,4 +1,4 @@
-import { apiClient } from '../lib/apiClient';
+import apiClient from './apiClient';
 import { PaymentHistoryItem, PaymentRequest } from '../types';
 
 export const paymentService = {

@@ -1,4 +1,4 @@
-import { apiClient } from '../lib/apiClient';
+import apiClient from './apiClient';
 import { CreateMemberRequest, Member, PageMember, UpdateMemberRequest } from '../types';
 
 export const memberService = {
