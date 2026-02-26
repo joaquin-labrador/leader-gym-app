@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
-import { Table } from '../components/ui/Table';
 import { paymentService } from '../services/paymentService';
 import { planService } from '../services/planService';
-import { PaymentHistoryItem, Plan } from '../types';
+import { Plan } from '../types';
 import { toast } from 'sonner';
-import { Search, CreditCard } from 'lucide-react';
+import { CreditCard } from 'lucide-react';
 import { formatPlanName } from '../lib/planUtils';
 
 export const Payments: React.FC = () => {
@@ -16,10 +15,6 @@ export const Payments: React.FC = () => {
     const [planId, setPlanId] = useState<number | ''>('');
     const [amount, setAmount] = useState('');
     const [loadingPay, setLoadingPay] = useState(false);
-
-    const [searchDni, setSearchDni] = useState('');
-    const [history, setHistory] = useState<PaymentHistoryItem[]>([]);
-    const [loadingHistory, setLoadingHistory] = useState(false);
 
     useEffect(() => {
         planService.getAllPlans()
@@ -45,10 +40,6 @@ export const Payments: React.FC = () => {
             setDni('');
             setAmount('');
             setPlanId('');
-
-            if (searchDni === dni) {
-                fetchHistory(dni);
-            }
         } catch (err: any) {
             const msg = err.response?.data?.message || err.response?.data?.error || 'Error al procesar el pago';
             toast.error(`Error: ${msg}`);
@@ -57,32 +48,14 @@ export const Payments: React.FC = () => {
         }
     };
 
-    const fetchHistory = async (targetDni: string) => {
-        setLoadingHistory(true);
-        try {
-            const data = await paymentService.getPaymentHistory(targetDni);
-            setHistory(data);
-        } catch (err: any) {
-            toast.error('Error al cargar historial o DNI no encontrado');
-        } finally {
-            setLoadingHistory(false);
-        }
-    };
-
-    const handleSearchHistory = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!searchDni) return;
-        fetchHistory(searchDni);
-    };
-
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 max-w-2xl mx-auto">
             <div>
                 <h1 className="text-3xl font-bold">Pagos</h1>
-                <p className="text-gray-400 mt-1">Registre nuevos pagos o consulte el historial de un socio</p>
+                <p className="text-gray-400 mt-1">Registre nuevos pagos de socios</p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid gap-8">
                 {/* Formulario de Pago */}
                 <Card className="border-gold-500/30">
                     <div className="p-4 bg-dark-800 border-b border-dark-700 flex items-center gap-2">
@@ -134,52 +107,6 @@ export const Payments: React.FC = () => {
                         </form>
                     </CardContent>
                 </Card>
-
-                {/* Historial de Pagos */}
-                <div className="space-y-6">
-                    <Card>
-                        <div className="p-4 bg-dark-800 border-b border-dark-700 flex items-center gap-2">
-                            <Search className="text-blue-500" />
-                            <h2 className="text-xl font-bold text-gray-200">Historial por Socio</h2>
-                        </div>
-                        <CardContent>
-                            <form onSubmit={handleSearchHistory} className="flex gap-4">
-                                <div className="flex-1">
-                                    <Input
-                                        placeholder="DNI del socio..."
-                                        value={searchDni}
-                                        onChange={(e) => setSearchDni(e.target.value)}
-                                    />
-                                </div>
-                                <Button type="submit" variant="secondary" isLoading={loadingHistory} disabled={!searchDni.trim()}>
-                                    Buscar
-                                </Button>
-                            </form>
-                        </CardContent>
-                    </Card>
-
-                    {history.length > 0 && (
-                        <Card>
-                            <CardContent className="p-0 max-h-[500px] overflow-y-auto">
-                                <Table
-                                    data={history}
-                                    columns={[
-                                        { header: 'Fecha', accessor: (p) => new Date(p.paymentDate).toLocaleDateString('es-AR') },
-                                        { header: 'Plan', accessor: (p) => <span className="font-semibold text-gold-400">{formatPlanName(p.planName)}</span> },
-                                        { header: 'Monto', accessor: (p) => `$ ${p.amount.toLocaleString('es-AR')}` },
-                                        { header: 'Vence', accessor: (p) => p.expirationDate ? new Date(p.expirationDate).toLocaleDateString('es-AR') : '-' },
-                                        {
-                                            header: 'Estado', accessor: (p) =>
-                                                p.active
-                                                    ? <span className="text-green-500 font-bold text-xs">ACTIVO</span>
-                                                    : <span className="text-red-500 font-bold text-xs">VENCIDO</span>
-                                        },
-                                    ]}
-                                />
-                            </CardContent>
-                        </Card>
-                    )}
-                </div>
             </div>
         </div>
     );
