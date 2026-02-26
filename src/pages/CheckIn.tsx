@@ -1,0 +1,84 @@
+import React, { useState } from 'react';
+import { Card, CardContent } from '../components/ui/Card';
+import { Input } from '../components/ui/Input';
+import { Button } from '../components/ui/Button';
+import { checkInService } from '../services/checkInService';
+import { toast } from 'sonner';
+import { CheckCircle2, XCircle } from 'lucide-react';
+
+export const CheckIn: React.FC = () => {
+    const [dni, setDni] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [lastCheckIn, setLastCheckIn] = useState<'success' | 'error' | null>(null);
+
+    const handleCheckIn = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!dni.trim()) return;
+
+        setLoading(true);
+        try {
+            await checkInService.registerCheckIn(dni);
+            setLastCheckIn('success');
+            toast.success('Ingreso registrado correctamente');
+            setDni('');
+        } catch (err: any) {
+            setLastCheckIn('error');
+            const msg = err.response?.data?.message || 'Error al registrar el ingreso. Verifique el DNI y si tiene su plan al día.';
+            toast.error(msg);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="max-w-2xl mx-auto space-y-8">
+            <div>
+                <h1 className="text-3xl font-bold">Check-In de Socios</h1>
+                <p className="text-gray-400 mt-2">Ingrese el DNI del socio para registrar su entrada al gimnasio.</p>
+            </div>
+
+            <Card className="border-gold-500/20 shadow-[0_0_20px_rgba(245,158,11,0.1)]">
+                <CardContent className="pt-8">
+                    <form onSubmit={handleCheckIn} className="space-y-6">
+                        <div className="flex gap-4 items-end">
+                            <div className="flex-1">
+                                <Input
+                                    label="DNI del Socio"
+                                    placeholder="Ingrese el DNI sin puntos"
+                                    value={dni}
+                                    onChange={(e) => setDni(e.target.value)}
+                                    className="text-2xl py-4 h-16 font-mono tracking-widest text-center"
+                                    autoFocus
+                                />
+                            </div>
+                        </div>
+                        <Button
+                            type="submit"
+                            className="w-full h-16 text-xl"
+                            isLoading={loading}
+                            disabled={!dni.trim()}
+                        >
+                            Registrar Ingreso
+                        </Button>
+                    </form>
+                </CardContent>
+            </Card>
+
+            {lastCheckIn === 'success' && (
+                <div className="flex flex-col items-center justify-center p-8 bg-green-900/20 border border-green-500/30 rounded-xl text-green-400">
+                    <CheckCircle2 size={64} className="mb-4" />
+                    <h2 className="text-2xl font-bold">¡Ingreso Permitido!</h2>
+                    <p>El socio tiene el pase activo.</p>
+                </div>
+            )}
+
+            {lastCheckIn === 'error' && (
+                <div className="flex flex-col items-center justify-center p-8 bg-red-900/20 border border-red-500/30 rounded-xl text-red-500">
+                    <XCircle size={64} className="mb-4" />
+                    <h2 className="text-2xl font-bold">Ingreso Denegado</h2>
+                    <p>Verifique el pago del socio.</p>
+                </div>
+            )}
+        </div>
+    );
+};
