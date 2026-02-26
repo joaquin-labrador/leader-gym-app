@@ -103,7 +103,14 @@ export const Payments: React.FC = () => {
                                 <select
                                     className="w-full px-4 py-2.5 bg-dark-900 border border-dark-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-gold-500/50"
                                     value={planId}
-                                    onChange={(e) => setPlanId(Number(e.target.value))}
+                                    onChange={(e) => {
+                                        const id = Number(e.target.value);
+                                        setPlanId(id);
+                                        const selectedPlan = plans.find(p => p.id === id);
+                                        if (selectedPlan) {
+                                            setAmount(selectedPlan.price.toString());
+                                        }
+                                    }}
                                 >
                                     <option value="" disabled>Seleccione un plan</option>
                                     {plans.map((p) => (
