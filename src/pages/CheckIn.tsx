@@ -10,12 +10,24 @@ export const CheckIn: React.FC = () => {
     const [dni, setDni] = useState('');
     const [loading, setLoading] = useState(false);
     const [lastCheckIn, setLastCheckIn] = useState<'success' | 'error' | null>(null);
+    const [errorMessage, setErrorMessage] = useState<string>('');
+
+    const translateError = (msg: string): string => {
+        const lowerMsg = msg.toLowerCase();
+        if (lowerMsg.includes('already checked in')) return 'El socio ya ingresó el día de hoy.';
+        if (lowerMsg.includes('not found')) return 'Socio no encontrado. Verifique el DNI.';
+        if (lowerMsg.includes('not pay') || lowerMsg.includes('payment')) return 'Debe verificar el pago. El plan se encuentra vencido.';
+        if (lowerMsg.includes('weekly visit limit')) return 'Ingreso denegado: Se pasó del límite de visitas semanales de su plan.';
+        if (lowerMsg.includes('daily visit limit')) return 'Ingreso denegado: Ya realizó su visita diaria permitida.';
+        return msg; // Fallback to original if no match
+    };
 
     const handleCheckIn = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!dni.trim()) return;
 
         setLoading(true);
+        setErrorMessage('');
         try {
             await checkInService.registerCheckIn(dni);
             setLastCheckIn('success');
@@ -23,8 +35,10 @@ export const CheckIn: React.FC = () => {
             setDni('');
         } catch (err: any) {
             setLastCheckIn('error');
-            const msg = err.response?.data?.message || 'Error al registrar el ingreso. Verifique el DNI y si tiene su plan al día.';
-            toast.error(msg);
+            const rawMsg = err.response?.data?.message || 'Error al registrar el ingreso.';
+            const translatedMsg = translateError(rawMsg);
+            setErrorMessage(translatedMsg);
+            toast.error(translatedMsg);
         } finally {
             setLoading(false);
         }
@@ -54,7 +68,7 @@ export const CheckIn: React.FC = () => {
                         </div>
                         <Button
                             type="submit"
-                            className="w-full h-16 text-xl"
+                            className="w-full h-16 text-xl bg-gold-600 hover:bg-gold-700 text-black font-bold"
                             isLoading={loading}
                             disabled={!dni.trim()}
                         >
@@ -65,18 +79,18 @@ export const CheckIn: React.FC = () => {
             </Card>
 
             {lastCheckIn === 'success' && (
-                <div className="flex flex-col items-center justify-center p-8 bg-green-900/20 border border-green-500/30 rounded-xl text-green-400">
+                <div className="flex flex-col items-center justify-center p-8 bg-green-900/20 border border-green-500/30 rounded-xl text-green-400 animate-in zoom-in-95 duration-300">
                     <CheckCircle2 size={64} className="mb-4" />
-                    <h2 className="text-2xl font-bold">¡Ingreso Permitido!</h2>
-                    <p>El socio tiene el pase activo.</p>
+                    <h2 className="text-2xl font-bold">¡INGRESO PERMITIDO!</h2>
+                    <p className="text-lg">El socio tiene el pase activo.</p>
                 </div>
             )}
 
             {lastCheckIn === 'error' && (
-                <div className="flex flex-col items-center justify-center p-8 bg-red-900/20 border border-red-500/30 rounded-xl text-red-500">
+                <div className="flex flex-col items-center justify-center p-8 bg-red-900/20 border border-red-500/30 rounded-xl text-red-500 animate-in zoom-in-95 duration-300">
                     <XCircle size={64} className="mb-4" />
-                    <h2 className="text-2xl font-bold">Ingreso Denegado</h2>
-                    <p>Verifique el pago del socio.</p>
+                    <h2 className="text-2xl font-bold uppercase tracking-wider">Ingreso Denegado</h2>
+                    <p className="text-lg font-medium mt-2">{errorMessage}</p>
                 </div>
             )}
         </div>
