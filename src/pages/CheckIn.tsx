@@ -6,10 +6,31 @@ import { checkInService } from '../services/checkInService';
 import { toast } from 'sonner';
 import { CheckCircle2, XCircle } from 'lucide-react';
 
+const translateErrorMessage = (msg: string): string => {
+    const lower = msg.toLowerCase();
+    if (lower.includes('already checked in today')) {
+        return 'El socio ya registró su ingreso el día de hoy.';
+    }
+    if (lower.includes('weekly visit limit')) {
+        return 'El socio alcanzó el límite de visitas semanales (plan 3 días).';
+    }
+    if (lower.includes('has not paid') || lower.includes('membership fee')) {
+        return 'El socio no tiene el pago al día o su plan está vencido.';
+    }
+    if (lower.includes('member not found')) {
+        return 'No se encontró ningún socio con ese DNI.';
+    }
+    if (lower.includes('plan not found')) {
+        return 'El plan del socio no fue encontrado.';
+    }
+    return msg;
+};
+
 export const CheckIn: React.FC = () => {
     const [dni, setDni] = useState('');
     const [loading, setLoading] = useState(false);
     const [lastCheckIn, setLastCheckIn] = useState<'success' | 'error' | null>(null);
+    const [errorMessage, setErrorMessage] = useState('');
 
     const handleCheckIn = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -19,12 +40,15 @@ export const CheckIn: React.FC = () => {
         try {
             await checkInService.registerCheckIn(dni);
             setLastCheckIn('success');
+            setErrorMessage('');
             toast.success('Ingreso registrado correctamente');
             setDni('');
         } catch (err: any) {
+            const rawMsg = err.response?.data?.message || 'Error al registrar el ingreso.';
+            const translated = translateErrorMessage(rawMsg);
             setLastCheckIn('error');
-            const msg = err.response?.data?.message || 'Error al registrar el ingreso. Verifique el DNI y si tiene su plan al día.';
-            toast.error(msg);
+            setErrorMessage(translated);
+            toast.error(translated);
         } finally {
             setLoading(false);
         }
@@ -76,7 +100,7 @@ export const CheckIn: React.FC = () => {
                 <div className="flex flex-col items-center justify-center p-8 bg-red-900/20 border border-red-500/30 rounded-xl text-red-500">
                     <XCircle size={64} className="mb-4" />
                     <h2 className="text-2xl font-bold">Ingreso Denegado</h2>
-                    <p>Verifique el pago del socio.</p>
+                    <p className="mt-2 text-center text-red-400">{errorMessage}</p>
                 </div>
             )}
         </div>
