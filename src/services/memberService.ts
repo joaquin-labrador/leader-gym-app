@@ -19,11 +19,10 @@ export const memberService = {
         await apiClient.delete(`/api/members/${dni}`);
     },
 
-    getMembers: async (page = 0, size = 10, sort?: string): Promise<PageMember> => {
+    getMembers: async (page = 0, size = 20, sort?: string): Promise<PageMember> => {
         const params: any = { page, size };
         if (sort) params.sort = sort;
-
         const response = await apiClient.get<PageMember>('/api/members', { params });
         return response.data;
-    }
+    },
 };
