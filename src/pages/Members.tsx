@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -7,7 +7,7 @@ import { memberService } from '../services/memberService';
 import { planService } from '../services/planService';
 import { Member, Plan, CreateMemberRequest } from '../types';
 import { toast } from 'sonner';
-import { Plus, Trash2, Edit, Calendar as CalendarIcon } from 'lucide-react';
+import { Plus, Trash2, Edit, Calendar as CalendarIcon, Search, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { formatPlanName } from '../lib/planUtils';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
@@ -15,10 +15,23 @@ import { es } from 'date-fns/locale/es';
 
 registerLocale('es', es);
 
+const PAGE_SIZE = 20;
+
+
+
 export const Members: React.FC = () => {
     const [members, setMembers] = useState<Member[]>([]);
     const [plans, setPlans] = useState<Plan[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // Paginación (sólo activa cuando no hay búsqueda)
+    const [pageIndex, setPageIndex] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+    const [totalElements, setTotalElements] = useState(0);
+
+    // Búsqueda por DNI
+    const [searchInput, setSearchInput] = useState('');
+    const [isSearchMode, setIsSearchMode] = useState(false);
 
     // Modal / Form state
     const [showForm, setShowForm] = useState(false);
@@ -27,23 +40,55 @@ export const Members: React.FC = () => {
         dni: '', firstName: '', lastName: '', phoneNumber: '', email: '', planId: 0, birthDate: ''
     });
 
-    const fetchMembers = async () => {
+    // ── Carga paginada (modo lista) ──────────────────────────────────
+    const fetchMembers = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await memberService.getMembers(0, 50, 'firstName,asc');
+            const data = await memberService.getMembers(pageIndex, PAGE_SIZE, 'firstName,asc');
             setMembers(data.content || []);
-        } catch (err) {
+            setTotalPages(data.totalPages ?? 0);
+            setTotalElements(data.totalElements ?? 0);
+        } catch {
             toast.error('Error al cargar socios');
+        } finally {
+            setLoading(false);
+        }
+    }, [pageIndex]);
+
+    useEffect(() => {
+        if (!isSearchMode) fetchMembers();
+    }, [fetchMembers, isSearchMode]);
+
+    useEffect(() => {
+        planService.getAllPlans().then(setPlans).catch(console.error);
+    }, []);
+
+    // ── Búsqueda puntual ─────────────────────────────────────────────
+    const handleSearch = async () => {
+        const query = searchInput.trim();
+        if (!query) return;
+
+        setLoading(true);
+        setIsSearchMode(true);
+        try {
+            const member = await memberService.getMemberByDni(query);
+            setMembers([member]);
+            setTotalPages(0);
+            setTotalElements(1);
+        } catch {
+            toast.error('Error al buscar socio');
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        fetchMembers();
-        planService.getAllPlans().then(setPlans).catch(console.error);
-    }, []);
+    const handleClearSearch = () => {
+        setSearchInput('');
+        setIsSearchMode(false);
+        setPageIndex(0);
+    };
 
+    // ── CRUD handlers ────────────────────────────────────────────────
     const handleOpenCreate = () => {
         setFormData({ dni: '', firstName: '', lastName: '', phoneNumber: '', email: '', planId: plans[0]?.id || 0, birthDate: '' });
         setIsEditing(false);
@@ -69,8 +114,8 @@ export const Members: React.FC = () => {
         try {
             await memberService.deleteMember(dni);
             toast.success('Socio eliminado');
-            fetchMembers();
-        } catch (err) {
+            if (isSearchMode) handleClearSearch(); else fetchMembers();
+        } catch {
             toast.error('Error al eliminar el socio');
         }
     };
@@ -89,20 +134,18 @@ export const Members: React.FC = () => {
                 });
                 toast.success('Socio actualizado');
             } else {
-                await memberService.createMember({
-                    ...formData,
-                    planId: Number(formData.planId)
-                });
+                await memberService.createMember({ ...formData, planId: Number(formData.planId) });
                 toast.success('Socio creado exitosamente');
             }
             setShowForm(false);
-            fetchMembers();
+            if (isSearchMode) handleClearSearch(); else fetchMembers();
         } catch (err: any) {
             const msg = err.response?.data?.message || 'Error al guardar el socio';
             toast.error(msg);
         }
     };
 
+    // ── Form view ────────────────────────────────────────────────────
     if (showForm) {
         return (
             <div className="max-w-2xl mx-auto space-y-6">
@@ -184,7 +227,6 @@ export const Members: React.FC = () => {
                                     ))}
                                 </select>
                             </div>
-
                             <div className="flex gap-4 pt-4 border-t border-dark-800">
                                 <Button type="submit" className="flex-1">Guardar</Button>
                                 <Button type="button" variant="secondary" onClick={() => setShowForm(false)}>Cancelar</Button>
@@ -196,8 +238,12 @@ export const Members: React.FC = () => {
         );
     }
 
+    // ── List view ────────────────────────────────────────────────────
+
+
     return (
         <div className="space-y-6">
+            {/* Header */}
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold">Gestión de Socios</h1>
                 <Button onClick={handleOpenCreate}>
@@ -206,12 +252,60 @@ export const Members: React.FC = () => {
                 </Button>
             </div>
 
+            {/* Búsqueda por DNI */}
+            <div className="flex gap-2 items-stretch">
+                <input
+                    type="text"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    placeholder="Buscar por DNI…"
+                    className="flex-1 h-11 px-4 bg-dark-900 border border-dark-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-500 transition-all"
+                />
+
+                {/* Botón lupa */}
+                <button
+                    onClick={handleSearch}
+                    disabled={loading || !searchInput.trim()}
+                    className="h-11 w-11 flex items-center justify-center bg-gold-500 hover:bg-gold-400 disabled:opacity-40 text-dark-950 font-semibold rounded-lg transition-all shrink-0"
+                    title="Buscar"
+                >
+                    <Search size={18} />
+                </button>
+
+                {/* Botón limpiar (sólo visible cuando hay búsqueda activa) */}
+                {isSearchMode && (
+                    <button
+                        onClick={handleClearSearch}
+                        className="h-11 w-11 flex items-center justify-center bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-all shrink-0"
+                        title="Limpiar búsqueda"
+                    >
+                        <X size={18} />
+                    </button>
+                )}
+            </div>
+
+            {/* Badge de modo */}
+            {isSearchMode && (
+                <div className="flex items-center gap-2 text-sm">
+                    <span className="px-2 py-0.5 bg-gold-500/10 border border-gold-500/30 text-gold-400 rounded-full text-xs font-semibold">
+                        Resultado de búsqueda
+                    </span>
+                    <span className="text-gray-400">
+                        {members.length === 0
+                            ? 'Sin resultados'
+                            : `${members.length} socio${members.length !== 1 ? 's' : ''} encontrado${members.length !== 1 ? 's' : ''}`}
+                    </span>
+                </div>
+            )}
+
+            {/* Tabla */}
             <Card>
                 <CardContent className="p-0">
                     <Table
                         data={members}
                         isLoading={loading}
-                        emptyMessage="No hay socios registrados"
+                        emptyMessage={isSearchMode ? 'Sin resultados para esta búsqueda' : 'No hay socios registrados'}
                         columns={[
                             { header: 'DNI', accessor: (m) => m.dni },
                             { header: 'Nombre', accessor: (m) => <span className="font-semibold text-gray-100">{m.firstName} {m.lastName}</span> },
@@ -241,6 +335,36 @@ export const Members: React.FC = () => {
                     />
                 </CardContent>
             </Card>
+
+            {/* Paginación (oculta en modo búsqueda) */}
+            {!isSearchMode && totalPages > 1 && (
+                <div className="flex items-center justify-between pt-2">
+                    <span className="text-sm text-gray-400">
+                        Página <span className="text-white font-semibold">{pageIndex + 1}</span> de{' '}
+                        <span className="text-white font-semibold">{totalPages}</span>
+                        {' '}·{' '}
+                        <span className="text-gold-400 font-semibold">{totalElements}</span> socio{totalElements !== 1 ? 's' : ''}
+                    </span>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
+                            disabled={pageIndex === 0 || loading}
+                        >
+                            <ChevronLeft size={16} className="mr-1" /> Anterior
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setPageIndex((p) => Math.min(totalPages - 1, p + 1))}
+                            disabled={pageIndex >= totalPages - 1 || loading}
+                        >
+                            Siguiente <ChevronRight size={16} className="ml-1" />
+                        </Button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
