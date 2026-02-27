@@ -1,45 +1,35 @@
 import axios from 'axios';
 
 // Get base URL from Vite env variables, fallback to window.location.origin if relative route
-const baseURL = import.meta.env.VITE_API_BASE_URL || window.location.origin;
+const baseURL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || window.location.origin;
 
 const apiClient = axios.create({
     baseURL: baseURL,
     headers: {
         'Content-Type': 'application/json',
     },
-    // Required if you use cookies or session-based auth
-    // withCredentials: true, 
+    // Required for session-based auth (cookies)
+    withCredentials: true,
 });
 
-// Request interceptor for inserting tokens
+// Request interceptor
 apiClient.interceptors.request.use(
-    (config) => {
-        // Here you would grab the token if you add Auth later
-        // const token = localStorage.getItem('token');
-        // if (token) {
-        //     config.headers.Authorization = `Bearer ${token}`;
-        // }
-        return config;
-    },
+    (config) => config,
     (error) => Promise.reject(error)
 );
 
-// Response interceptor for centralized error handling and logging
+// Response interceptor for centralized error handling
 apiClient.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response) {
-            const { status, data, config } = error.response;
-            if (status === 401 || status === 403) {
-                console.error(`[API Error ${status}] Unauthorized/Forbidden access to ${config.url}`);
-                console.error('Response Data:', data);
-                // Optionally handle global logout here if tokens expire
+            const { status } = error.response;
+            // Si cualquier endpoint da 401 (excepto /me al inicio), es que la sesión se perdió
+            if (status === 401 && !error.config.url.includes('/api/auth/me')) {
+                console.warn('Sesión expirada o inválida');
+                localStorage.removeItem('user');
+                // Podríamos redirigir aquí, pero es mejor que el componente lo maneje
             }
-        } else if (error.request) {
-            console.error('[API Error] No response received. CORS or Network issue.', error.request);
-        } else {
-            console.error('[API Error] Request setup failed:', error.message);
         }
         return Promise.reject(error);
     }
