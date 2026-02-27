@@ -7,7 +7,6 @@ import { toast } from 'sonner';
 import { CheckCircle2, XCircle } from 'lucide-react';
 
 
-
 export const CheckIn: React.FC = () => {
     const [dni, setDni] = useState('');
     const [loading, setLoading] = useState(false);
