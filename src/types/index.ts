@@ -77,6 +77,12 @@ export interface ReceiptHistoryItem {
     date: string;
 }
 
+export interface AuthUser {
+    username: string;
+    role: string;
+    longSession: boolean;
+}
+
 export interface ErrorResponse {
     timestamp: string;
     status: number;

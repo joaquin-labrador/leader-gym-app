@@ -313,6 +313,14 @@ export const Members: React.FC = () => {
                             { header: 'Teléfono', accessor: (m) => m.phoneNumber || '-' },
                             { header: 'Plan', accessor: (m) => m.planDescription ? <span className="text-gold-400 font-medium">{formatPlanName(m.planDescription)}</span> : '-' },
                             {
+                                header: 'Vencimiento',
+                                accessor: (m) => m.expirationDate ? (
+                                    <span className="text-gray-300 font-medium">
+                                        {m.expirationDate.split('-').reverse().join('/')}
+                                    </span>
+                                ) : '-'
+                            },
+                            {
                                 header: 'Estado',
                                 accessor: (m) => m.active
                                     ? <span className="px-2 py-1 bg-green-900/40 text-green-400 rounded-full text-xs font-bold">ACTIVO</span>

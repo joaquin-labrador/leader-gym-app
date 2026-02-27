@@ -1,10 +1,23 @@
 import React, { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
-import { Home, Users, Dumbbell, CreditCard, CheckCircle, History, ChevronLeft, Menu } from 'lucide-react';
-import { Toaster } from 'sonner';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Home, Users, Dumbbell, CreditCard, CheckCircle, History, ChevronLeft, Menu, LogOut, User as UserIcon } from 'lucide-react';
+import { Toaster, toast } from 'sonner';
+import { useAuth } from '../../context/AuthContext';
 
 export const Layout: React.FC = () => {
     const [isHidden, setIsHidden] = useState(false);
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+            toast.success('Sesión cerrada correctamente');
+            navigate('/login');
+        } catch (err) {
+            toast.error('Error al cerrar sesión');
+        }
+    };
 
     const navItems = [
         { to: '/', label: 'Inicio', icon: <Home size={20} /> },
@@ -47,6 +60,21 @@ export const Layout: React.FC = () => {
                     </button>
                 </div>
 
+                {/* User Info Section */}
+                {user && (
+                    <div className="p-4 border-b border-dark-800">
+                        <div className="flex items-center gap-3 px-4 py-2 bg-dark-800/50 rounded-xl border border-dark-800">
+                            <div className="w-10 h-10 rounded-full bg-gold-500/10 flex items-center justify-center text-gold-500">
+                                <UserIcon size={20} />
+                            </div>
+                            <div className="flex-1 overflow-hidden">
+                                <p className="text-sm font-bold text-white truncate">{user.username}</p>
+                                <p className="text-[10px] uppercase tracking-wider text-gold-500 font-medium">{user.role}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
                     {navItems.map((item) => (
                         <NavLink
@@ -65,7 +93,18 @@ export const Layout: React.FC = () => {
                     ))}
                 </nav>
 
-                <div className="p-4 text-xs text-gray-600 text-center border-t border-dark-800">
+                {/* Logout Button */}
+                <div className="p-4 border-t border-dark-800">
+                    <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-3 w-full px-4 py-3 text-gray-400 hover:bg-red-500/10 hover:text-red-500 rounded-xl transition-all duration-200 font-medium"
+                    >
+                        <LogOut size={20} />
+                        <span>Cerrar Sesión</span>
+                    </button>
+                </div>
+
+                <div className="p-4 text-[10px] text-gray-600 text-center border-t border-dark-800">
                     © {new Date().getFullYear()} Leader Gym Admin
                 </div>
             </aside>

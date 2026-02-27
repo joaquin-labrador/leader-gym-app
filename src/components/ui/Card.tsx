@@ -30,3 +30,11 @@ export const CardContent: React.FC<HTMLAttributes<HTMLDivElement>> = ({ classNam
         </div>
     );
 };
+
+export const CardTitle: React.FC<HTMLAttributes<HTMLHeadingElement>> = ({ className, children, ...props }) => {
+    return (
+        <h3 className={cn("text-xl font-bold text-white", className)} {...props}>
+            {children}
+        </h3>
+    );
+};
