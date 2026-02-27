@@ -6,25 +6,6 @@ import { checkInService } from '../services/checkInService';
 import { toast } from 'sonner';
 import { CheckCircle2, XCircle } from 'lucide-react';
 
-const translateErrorMessage = (msg: string): string => {
-    const lower = msg.toLowerCase();
-    if (lower.includes('already checked in today')) {
-        return 'El socio ya registró su ingreso el día de hoy.';
-    }
-    if (lower.includes('weekly visit limit')) {
-        return 'El socio alcanzó el límite de visitas semanales (plan 3 días).';
-    }
-    if (lower.includes('has not paid') || lower.includes('membership fee')) {
-        return 'El socio no tiene el pago al día o su plan está vencido.';
-    }
-    if (lower.includes('member not found')) {
-        return 'No se encontró ningún socio con ese DNI.';
-    }
-    if (lower.includes('plan not found')) {
-        return 'El plan del socio no fue encontrado.';
-    }
-    return msg;
-};
 
 export const CheckIn: React.FC = () => {
     const [dni, setDni] = useState('');
@@ -56,10 +37,8 @@ export const CheckIn: React.FC = () => {
             setDni('');
         } catch (err: any) {
             const rawMsg = err.response?.data?.message || 'Error al registrar el ingreso.';
-            const translated = translateErrorMessage(rawMsg);
-            setLastCheckIn('error');
-            const rawMsg = err.response?.data?.message || 'Error al registrar el ingreso.';
             const translatedMsg = translateError(rawMsg);
+            setLastCheckIn('error');
             setErrorMessage(translatedMsg);
             toast.error(translatedMsg);
         } finally {
