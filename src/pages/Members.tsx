@@ -7,7 +7,8 @@ import { memberService } from '../services/memberService';
 import { planService } from '../services/planService';
 import { Member, Plan, CreateMemberRequest } from '../types';
 import { toast } from 'sonner';
-import { Plus, Trash2, Edit, Calendar as CalendarIcon, Search, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Plus, Trash2, Edit, Calendar as CalendarIcon, Search, ChevronLeft, ChevronRight, X, AlertCircle } from 'lucide-react';
+import { Modal } from '../components/ui/Modal';
 import { formatPlanName } from '../lib/planUtils';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
@@ -38,6 +39,17 @@ export const Members: React.FC = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState<CreateMemberRequest>({
         dni: '', firstName: '', lastName: '', phoneNumber: '', email: '', planId: 0, birthDate: ''
+    });
+
+    // Error Feedback Modal
+    const [errorModal, setErrorModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+    }>({
+        isOpen: false,
+        title: '',
+        message: ''
     });
 
     // ── Carga paginada (modo lista) ──────────────────────────────────
@@ -115,8 +127,20 @@ export const Members: React.FC = () => {
             await memberService.deleteMember(dni);
             toast.success('Socio eliminado');
             if (isSearchMode) handleClearSearch(); else fetchMembers();
-        } catch {
-            toast.error('Error al eliminar el socio');
+        } catch (err: any) {
+            const rawMsg = err.response?.data?.message || '';
+
+            if (rawMsg.includes('active payments')) {
+                setErrorModal({
+                    isOpen: true,
+                    title: 'Operación denegada',
+                    message: 'El socio posee pagos asociados en el sistema. Su eliminación afectaría la integridad del historial de transacciones y los reportes de ingresos. No es posible eliminar socios con registros de pago vigentes.'
+                });
+            } else if (rawMsg.includes('not found')) {
+                toast.error('Socio no encontrado. Es posible que ya haya sido eliminado.');
+            } else {
+                toast.error('Error al intentar eliminar el socio. Intente nuevamente.');
+            }
         }
     };
 
@@ -373,6 +397,29 @@ export const Members: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            <Modal
+                isOpen={errorModal.isOpen}
+                onClose={() => setErrorModal({ ...errorModal, isOpen: false })}
+                title={errorModal.title}
+                footer={
+                    <Button onClick={() => setErrorModal({ ...errorModal, isOpen: false })} className="w-full">
+                        Entendido
+                    </Button>
+                }
+            >
+                <div className="flex flex-col items-center gap-6 py-2">
+                    <div className="w-20 h-20 rounded-full bg-red-950/30 border border-red-500/20 flex items-center justify-center text-red-500 animate-in zoom-in duration-300">
+                        <AlertCircle size={40} />
+                    </div>
+                    <div className="space-y-4 w-full">
+                        <p className="text-xl font-bold text-white text-center">Acción denegada</p>
+                        <p className="text-gray-300 leading-relaxed text-pretty text-justify">
+                            {errorModal.message}
+                        </p>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };
