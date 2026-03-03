@@ -11,6 +11,7 @@ import { Members } from './pages/Members';
 import { Plans } from './pages/Plans';
 import { Payments } from './pages/Payments';
 import { Receipts } from './pages/Receipts';
+import { PaymentHistory } from './pages/PaymentHistory';
 import { Login } from './pages/Login';
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
             <Route path="plans" element={<Plans />} />
             <Route path="payments" element={<Payments />} />
             <Route path="receipts" element={<Receipts />} />
+            <Route path="payment-history" element={<PaymentHistory />} />
           </Route>
         </Routes>
       </HashRouter>

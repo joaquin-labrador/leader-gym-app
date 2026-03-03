@@ -14,6 +14,7 @@ export const Payments: React.FC = () => {
     const [dni, setDni] = useState('');
     const [planId, setPlanId] = useState<number | ''>('');
     const [amount, setAmount] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'TRANSFER' | ''>('CASH');
     const [loadingPay, setLoadingPay] = useState(false);
 
     useEffect(() => {
@@ -24,7 +25,7 @@ export const Payments: React.FC = () => {
 
     const handlePayment = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!dni || !planId || !amount) {
+        if (!dni || !planId || !amount || !paymentMethod) {
             toast.error('Complete todos los campos del pago');
             return;
         }
@@ -34,7 +35,8 @@ export const Payments: React.FC = () => {
             await paymentService.registerPayment({
                 dni,
                 planId: Number(planId),
-                amount: Number(amount)
+                amount: Number(amount),
+                paymentMethod: paymentMethod
             });
             toast.success('Pago registrado exitosamente');
             setDni('');
@@ -100,6 +102,20 @@ export const Payments: React.FC = () => {
                                 onChange={(e) => setAmount(e.target.value)}
                                 placeholder="Ej. 15000"
                             />
+
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-sm font-medium text-gray-300">Método de Pago</label>
+                                <select
+                                    className="w-full px-4 py-2.5 bg-dark-900 border border-dark-700 rounded-lg text-white appearance-none focus:outline-none focus:ring-2 focus:ring-gold-500/50"
+                                    value={paymentMethod}
+                                    onChange={(e) => setPaymentMethod(e.target.value as any)}
+                                    required
+                                >
+                                    <option value="CASH">Efectivo 💵</option>
+                                    <option value="CARD">Tarjeta 💳</option>
+                                    <option value="TRANSFER">Transferencia 🏦</option>
+                                </select>
+                            </div>
 
                             <Button type="submit" className="w-full mt-4" isLoading={loadingPay}>
                                 Confirmar Pago
