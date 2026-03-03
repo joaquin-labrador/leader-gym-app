@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Home, Users, Dumbbell, CreditCard, CheckCircle, History, ChevronLeft, Menu, LogOut, User as UserIcon } from 'lucide-react';
+import { Home, Users, Dumbbell, CreditCard, CheckCircle, History, ChevronLeft, Menu, LogOut, User as UserIcon, FileText } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 
@@ -25,7 +25,8 @@ export const Layout: React.FC = () => {
         { to: '/members', label: 'Socios', icon: <Users size={20} /> },
         { to: '/plans', label: 'Planes', icon: <Dumbbell size={20} /> },
         { to: '/payments', label: 'Pagos', icon: <CreditCard size={20} /> },
-        { to: '/receipts', label: 'Historial', icon: <History size={20} /> },
+        { to: '/receipts', label: 'Recibos', icon: <History size={20} /> },
+        { to: '/payment-history', label: 'Arqueo/Caja', icon: <FileText size={20} /> },
     ];
 
     return (

@@ -58,6 +58,7 @@ export interface PaymentRequest {
     dni: string;
     planId: number;
     amount: number;
+    paymentMethod: string;
 }
 
 export interface PaymentHistoryItem {
@@ -89,4 +90,19 @@ export interface ErrorResponse {
     error: string;
     message: string;
     path: string;
+}
+
+export interface PaymentHistoryFilterDTO {
+    memberDni: string | null;
+    paymentMethod: string | null;
+    startDate: string | null;
+    endDate: string | null;
+}
+
+export interface PaymentHistoryResponseDTO {
+    memberDni: string;
+    planDescription: string;
+    amountPaid: number;
+    paymentMethod: string;
+    paymentDate: string;
 }

@@ -7,17 +7,26 @@ import { toast } from 'sonner';
 import { CheckCircle2, XCircle } from 'lucide-react';
 
 
+const SUCCESS_SOUND_URL = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3';
+const ERROR_SOUND_URL = 'https://assets.mixkit.co/active_storage/sfx/2573/2573-preview.mp3';
+
 export const CheckIn: React.FC = () => {
     const [dni, setDni] = useState('');
     const [loading, setLoading] = useState(false);
     const [lastCheckIn, setLastCheckIn] = useState<'success' | 'error' | null>(null);
     const [errorMessage, setErrorMessage] = useState<string>('');
 
+    const playAudio = (url: string) => {
+        const audio = new Audio(url);
+        audio.play().catch(err => console.error("Error playing audio:", err));
+    };
+
     const translateError = (msg: string): string => {
         const lowerMsg = msg.toLowerCase();
         if (lowerMsg.includes('already checked in')) return 'El socio ya ingresó el día de hoy.';
         if (lowerMsg.includes('not found')) return 'Socio no encontrado. Verifique el DNI.';
-        if (lowerMsg.includes('not pay') || lowerMsg.includes('payment')) return 'Debe verificar el pago. El plan se encuentra vencido.';
+        if (lowerMsg.includes('not pay') || lowerMsg.includes('payment') || lowerMsg.includes('has not paid'))
+            return 'Ingreso denegado: El socio no tiene el pago de la cuota al día.';
         if (lowerMsg.includes('weekly visit limit')) return 'Ingreso denegado: Se pasó del límite de visitas semanales de su plan.';
         if (lowerMsg.includes('daily visit limit')) return 'Ingreso denegado: Ya realizó su visita diaria permitida.';
         return msg; // Fallback to original if no match
@@ -31,11 +40,13 @@ export const CheckIn: React.FC = () => {
         setErrorMessage('');
         try {
             await checkInService.registerCheckIn(dni);
+            playAudio(SUCCESS_SOUND_URL);
             setLastCheckIn('success');
             setErrorMessage('');
             toast.success('Ingreso registrado correctamente');
             setDni('');
         } catch (err: any) {
+            playAudio(ERROR_SOUND_URL);
             const rawMsg = err.response?.data?.message || 'Error al registrar el ingreso.';
             const translatedMsg = translateError(rawMsg);
             setLastCheckIn('error');

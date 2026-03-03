@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import { PaymentHistoryItem, PaymentRequest } from '../types';
+import { PaymentHistoryItem, PaymentHistoryResponseDTO, PaymentHistoryFilterDTO, PaymentRequest } from '../types';
 
 export const paymentService = {
     registerPayment: async (data: PaymentRequest): Promise<void> => {
@@ -8,6 +8,11 @@ export const paymentService = {
 
     getPaymentHistory: async (dni: string): Promise<PaymentHistoryItem[]> => {
         const response = await apiClient.get<PaymentHistoryItem[]>(`/api/payment/history/${dni}`);
+        return response.data;
+    },
+
+    getFilteredPaymentHistory: async (filter: PaymentHistoryFilterDTO): Promise<PaymentHistoryResponseDTO[]> => {
+        const response = await apiClient.post<PaymentHistoryResponseDTO[]>('/api/payment/history/filter', filter);
         return response.data;
     }
 };
