@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PaymentHistoryResponseDTO } from '../../types';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { formatPlanName } from '../../lib/planUtils';
 
 interface PaymentHistoryTableProps {
     data: PaymentHistoryResponseDTO[];
@@ -76,7 +77,7 @@ export const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ data }
                                 </td>
                                 <td className="px-6 py-4">
                                     <span className="text-white font-semibold">
-                                        {payment.planDescription}
+                                        {formatPlanName(payment.planDescription)}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4">
