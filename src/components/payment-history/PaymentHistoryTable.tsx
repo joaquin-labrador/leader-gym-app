@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { PaymentHistoryResponseDTO } from '../../types';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatPlanName } from '../../lib/planUtils';
+import { parseAndFormatDate } from '../../lib/dateUtils';
 
 interface PaymentHistoryTableProps {
     data: PaymentHistoryResponseDTO[];
@@ -23,18 +24,7 @@ export const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ data }
         }).format(value);
     };
 
-    const formatDate = (dateString: string) => {
-        try {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('es-AR', {
-                year: 'numeric',
-                month: 'short',
-                day: '2-digit'
-            });
-        } catch {
-            return dateString;
-        }
-    };
+    const formatDate = (dateString: string) => parseAndFormatDate(dateString);
 
     const getPaymentMethodInfo = (method: string) => {
         const info: Record<string, { label: string, emoji: string }> = {

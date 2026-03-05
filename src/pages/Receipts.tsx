@@ -7,6 +7,7 @@ import { receiptService } from '../services/receiptService';
 import { ReceiptHistoryItem } from '../types';
 import { toast } from 'sonner';
 import { Search } from 'lucide-react';
+import { parseAndFormatDate } from '../lib/dateUtils';
 
 export const Receipts: React.FC = () => {
     const [dni, setDni] = useState('');
@@ -73,7 +74,11 @@ export const Receipts: React.FC = () => {
                                 { header: 'Socio', accessor: (r) => `${r.firstName} ${r.lastName}` },
                                 {
                                     header: 'Fecha',
-                                    accessor: (r) => new Date(r.date).toLocaleDateString('es-AR')
+                                    accessor: (r) => parseAndFormatDate(r.date, {
+                                        year: 'numeric',
+                                        month: 'short',
+                                        day: '2-digit'
+                                    })
                                 }
                             ]}
                         />
