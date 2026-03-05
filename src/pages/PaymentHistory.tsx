@@ -33,15 +33,15 @@ export const PaymentHistory: React.FC = () => {
                 endDate: null
             };
 
-            // Lógica de fechas
+            // Lógica de fechas: Enviamos strings YYYY-MM-DD para evitar problemas de zona horaria
             if (filters.month) {
-                // Si hay mes seleccionado (YYYY-MM), ponemos startDate al día 1
-                const [year, month] = filters.month.split('-');
-                dto.startDate = new Date(parseInt(year), parseInt(month) - 1, 1).toISOString();
+                // Si hay mes seleccionado (YYYY-MM), enviamos el primer día como YYYY-MM-01
+                dto.startDate = `${filters.month}-01`;
                 dto.endDate = null;
             } else {
-                if (filters.startDate) dto.startDate = new Date(filters.startDate).toISOString();
-                if (filters.endDate) dto.endDate = new Date(filters.endDate).toISOString();
+                // filters.startDate y filters.endDate ya vienen como YYYY-MM-DD del input type="date"
+                if (filters.startDate) dto.startDate = filters.startDate;
+                if (filters.endDate) dto.endDate = filters.endDate;
             }
 
             const data = await paymentService.getFilteredPaymentHistory(dto);
