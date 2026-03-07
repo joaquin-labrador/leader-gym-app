@@ -14,5 +14,9 @@ export const paymentService = {
     getFilteredPaymentHistory: async (filter: PaymentHistoryFilterDTO): Promise<PaymentHistoryResponseDTO[]> => {
         const response = await apiClient.post<PaymentHistoryResponseDTO[]>('/api/payment/history/filter', filter);
         return response.data;
+    },
+
+    deleteLastPayment: async (paymentId: number): Promise<void> => {
+        await apiClient.delete(`/api/payment/history/${paymentId}`);
     }
 };

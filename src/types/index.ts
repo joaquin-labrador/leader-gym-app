@@ -100,6 +100,7 @@ export interface PaymentHistoryFilterDTO {
 }
 
 export interface PaymentHistoryResponseDTO {
+    paymentId: number;
     memberDni: string;
     planDescription: string;
     amountPaid: number;

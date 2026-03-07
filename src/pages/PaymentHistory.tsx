@@ -4,7 +4,9 @@ import { paymentService } from '../services/paymentService';
 import { PaymentHistoryResponseDTO, PaymentHistoryFilterDTO } from '../types';
 import { PaymentHistoryFilters } from '../components/payment-history/PaymentHistoryFilters';
 import { PaymentHistoryTable } from '../components/payment-history/PaymentHistoryTable';
-import { History, FileText, Download } from 'lucide-react';
+import { History, FileText, Download, AlertCircle } from 'lucide-react';
+import { Modal } from '../components/ui/Modal';
+import { Button } from '../components/ui/Button';
 
 export const PaymentHistory: React.FC = () => {
     const [history, setHistory] = useState<PaymentHistoryResponseDTO[]>([]);
@@ -15,6 +17,16 @@ export const PaymentHistory: React.FC = () => {
         month: '',
         startDate: '',
         endDate: ''
+    });
+
+    const [deleteModal, setDeleteModal] = useState<{
+        isOpen: boolean;
+        payment: PaymentHistoryResponseDTO | null;
+        isDeleting: boolean;
+    }>({
+        isOpen: false,
+        payment: null,
+        isDeleting: false
     });
 
     const fetchHistory = useCallback(async () => {
@@ -69,6 +81,22 @@ export const PaymentHistory: React.FC = () => {
         });
     };
 
+    const handleDelete = async () => {
+        if (!deleteModal.payment) return;
+
+        setDeleteModal(prev => ({ ...prev, isDeleting: true }));
+        try {
+            await paymentService.deleteLastPayment(deleteModal.payment.paymentId);
+            toast.success('Pago eliminado exitosamente');
+            setDeleteModal({ isOpen: false, payment: null, isDeleting: false });
+            fetchHistory(); // Recargar lista
+        } catch (err: any) {
+            const msg = err.response?.data?.message || 'Error al intentar eliminar el pago';
+            toast.error(msg);
+            setDeleteModal(prev => ({ ...prev, isDeleting: false }));
+        }
+    };
+
     return (
         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
             {/* Header Section */}
@@ -115,7 +143,10 @@ export const PaymentHistory: React.FC = () => {
                     <FileText size={20} className="text-gold-500" /> Resultados del Período
                 </h3>
 
-                <PaymentHistoryTable data={history} />
+                <PaymentHistoryTable
+                    data={history}
+                    onDelete={(payment) => setDeleteModal({ isOpen: true, payment, isDeleting: false })}
+                />
 
                 {loading && (
                     <div className="absolute inset-0 bg-dark-950/60 backdrop-blur-sm flex items-center justify-center rounded-2xl z-10 animate-in fade-in duration-300">
@@ -126,6 +157,53 @@ export const PaymentHistory: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* Modal de confirmación de borrado */}
+            <Modal
+                isOpen={deleteModal.isOpen}
+                onClose={() => !deleteModal.isDeleting && setDeleteModal({ isOpen: false, payment: null, isDeleting: false })}
+                title="Eliminar Registro de Pago"
+                footer={
+                    <div className="flex gap-3 w-full">
+                        <Button
+                            variant="secondary"
+                            className="flex-1"
+                            onClick={() => setDeleteModal({ isOpen: false, payment: null, isDeleting: false })}
+                            disabled={deleteModal.isDeleting}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            variant="danger"
+                            className="flex-1"
+                            onClick={handleDelete}
+                            isLoading={deleteModal.isDeleting}
+                        >
+                            Eliminar
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="flex flex-col items-center gap-4 py-2">
+                    <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 mb-2">
+                        <AlertCircle size={32} />
+                    </div>
+
+                    <div className="text-center space-y-3">
+                        <p className="text-gray-200">
+                            ¿Estás seguro de que deseas eliminar este pago del socio <span className="text-white font-bold">{deleteModal.payment?.memberDni}</span>?
+                        </p>
+                        <div className="bg-dark-800/50 p-4 rounded-xl border border-dark-700 text-sm text-left">
+                            <p className="text-gold-500 font-bold mb-2 uppercase text-xs tracking-widest">Atención:</p>
+                            <ul className="text-gray-400 space-y-2 list-disc pl-4">
+                                <li>Se eliminará tanto el registro histórico como el pago actual.</li>
+                                <li>El vencimiento del socio retrocederá a su fecha anterior.</li>
+                                <li>Si este era el único pago activo, el socio quedará con estado <span className="text-red-400 font-bold italic underline">INACTIVO</span> inmediatamente.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </Modal>
 
             {/* Print styles */}
             <style dangerouslySetInnerHTML={{
