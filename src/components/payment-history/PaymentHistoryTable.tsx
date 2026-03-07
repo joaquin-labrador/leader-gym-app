@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { PaymentHistoryResponseDTO } from '../../types';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { formatPlanName } from '../../lib/planUtils';
 import { parseAndFormatDate } from '../../lib/dateUtils';
 
 interface PaymentHistoryTableProps {
     data: PaymentHistoryResponseDTO[];
+    onDelete?: (payment: PaymentHistoryResponseDTO) => void;
 }
 
 const ROWS_PER_PAGE = 10;
 
-export const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ data }) => {
+export const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ data, onDelete }) => {
     const [currentPage, setCurrentPage] = useState(1);
 
     const totalPages = Math.ceil(data.length / ROWS_PER_PAGE);
@@ -54,6 +55,7 @@ export const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ data }
                             <th className="px-6 py-4">Plan / Descripción</th>
                             <th className="px-6 py-4">Método</th>
                             <th className="px-6 py-4 text-right">Monto</th>
+                            <th className="px-6 py-4 text-center no-print">Acciones</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-dark-800">
@@ -84,6 +86,15 @@ export const PaymentHistoryTable: React.FC<PaymentHistoryTableProps> = ({ data }
                                     <span className="text-gold-400 font-black text-lg">
                                         {formatCurrency(payment.amountPaid)}
                                     </span>
+                                </td>
+                                <td className="px-6 py-4 text-center no-print">
+                                    <button
+                                        onClick={() => onDelete?.(payment)}
+                                        className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                                        title="Eliminar Pago"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
                                 </td>
                             </tr>
                         ))}
