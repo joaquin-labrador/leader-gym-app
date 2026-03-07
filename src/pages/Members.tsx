@@ -108,6 +108,17 @@ export const Members: React.FC = () => {
     };
 
     const handleOpenEdit = (m: Member) => {
+        // Normalizar birthDate si viene como array [YYYY, MM, DD] desde el backend
+        let birthDateStr = '';
+        if (m.birthDate) {
+            if (Array.isArray(m.birthDate)) {
+                const [y, mm, d] = m.birthDate;
+                birthDateStr = `${y}-${String(mm).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            } else {
+                birthDateStr = m.birthDate as string;
+            }
+        }
+
         setFormData({
             dni: m.dni,
             firstName: m.firstName,
@@ -115,7 +126,7 @@ export const Members: React.FC = () => {
             phoneNumber: m.phoneNumber,
             email: m.email || '',
             planId: m.planId || (plans[0]?.id || 0),
-            birthDate: m.birthDate || ''
+            birthDate: birthDateStr
         });
         setIsEditing(true);
         setShowForm(true);

@@ -21,9 +21,8 @@ export interface Member {
     planId?: number;
     planDescription?: string;
     active: boolean;
-    registrationDate: string;
     expirationDate?: string;
-    birthDate?: string;
+    birthDate?: string | number[];
     age?: number;
 }
 
