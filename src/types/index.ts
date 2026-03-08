@@ -60,6 +60,13 @@ export interface PaymentRequest {
     paymentMethod: string;
 }
 
+export interface ExtraPaymentRequest {
+    dni: string;
+    amount: number;
+    paymentMethod: string;
+    description: string;
+}
+
 export interface PaymentHistoryItem {
     id: number;
     dni: string;

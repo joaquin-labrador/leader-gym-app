@@ -1,9 +1,13 @@
 import apiClient from './apiClient';
-import { PaymentHistoryItem, PaymentHistoryResponseDTO, PaymentHistoryFilterDTO, PaymentRequest } from '../types';
+import { PaymentHistoryItem, PaymentHistoryResponseDTO, PaymentHistoryFilterDTO, PaymentRequest, ExtraPaymentRequest } from '../types';
 
 export const paymentService = {
     registerPayment: async (data: PaymentRequest): Promise<void> => {
         await apiClient.post('/api/payment', data);
+    },
+
+    registerExtraPayment: async (data: ExtraPaymentRequest): Promise<void> => {
+        await apiClient.post('/api/payment/extra', data);
     },
 
     getPaymentHistory: async (dni: string): Promise<PaymentHistoryItem[]> => {
