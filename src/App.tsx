@@ -12,6 +12,7 @@ import { Plans } from './pages/Plans';
 import { Payments } from './pages/Payments';
 import { Receipts } from './pages/Receipts';
 import { PaymentHistory } from './pages/PaymentHistory';
+import { ExtraPayments } from './pages/ExtraPayments';
 import { Login } from './pages/Login';
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
             <Route path="members" element={<Members />} />
             <Route path="plans" element={<Plans />} />
             <Route path="payments" element={<Payments />} />
+            <Route path="extra-payments" element={<ExtraPayments />} />
             <Route path="receipts" element={<Receipts />} />
             <Route path="payment-history" element={<PaymentHistory />} />
           </Route>

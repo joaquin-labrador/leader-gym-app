@@ -25,11 +25,19 @@ export const CheckIn: React.FC = () => {
         const lowerMsg = msg.toLowerCase();
         if (lowerMsg.includes('already checked in')) return 'El socio ya ingresó el día de hoy.';
         if (lowerMsg.includes('not found')) return 'Socio no encontrado. Verifique el DNI.';
+
+        if (lowerMsg.includes('partial payment')) {
+            // Intentar extraer el monto que falta del mensaje del backend
+            const match = msg.match(/is: ([\d.,]+)/);
+            const debt = match ? match[1] : '';
+            return `El socio no puede ingresar porque debe parte de la cuota.${debt ? ` Monto restante: $${debt}` : ''}`;
+        }
+
         if (lowerMsg.includes('not pay') || lowerMsg.includes('payment') || lowerMsg.includes('has not paid'))
             return 'Ingreso denegado: El socio no tiene el pago de la cuota al día.';
         if (lowerMsg.includes('weekly visit limit')) return 'Ingreso denegado: Se pasó del límite de visitas semanales de su plan.';
         if (lowerMsg.includes('daily visit limit')) return 'Ingreso denegado: Ya realizó su visita diaria permitida.';
-        return msg; // Fallback to original if no match
+        return msg;
     };
 
     const handleCheckIn = async (e: React.FormEvent) => {
