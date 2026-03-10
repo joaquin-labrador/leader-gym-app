@@ -1,40 +1,192 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
+/* ──────────────────────────────────────────────
+   CSS CUSTOM PROPERTIES — DESIGN TOKENS
+   Applies to both dark and light themes
+────────────────────────────────────────────── */
+
+/* === DARK THEME (default) === */
+.dark-theme,
+:root {
+  --color-bg-base: #030712;
+  --color-bg-surface: #111827;
+  --color-bg-elevated: #1F2937;
+  --color-bg-overlay: #374151;
+
+  --color-border: #1F2937;
+  --color-border-subtle: #374151;
+
+  --color-text-primary: #F9FAFB;
+  --color-text-secondary: #9CA3AF;
+  --color-text-muted: #6B7280;
+  --color-text-placeholder: #4B5563;
+
+  --color-gold-400: #FBBF24;
+  --color-gold-500: #F59E0B;
+  --color-gold-600: #D97706;
+
+  --color-input-bg: #111827;
+  --color-input-border: #374151;
+
+  --color-sidebar-bg: #111827;
+  --color-sidebar-hover: #1F2937;
+  --color-sidebar-text: #9CA3AF;
+  --color-sidebar-active-text: #030712;
+  --color-sidebar-border: rgba(255, 255, 255, 0.08);
+
+  --color-table-head: #1F2937;
+  --color-table-row: #111827;
+  --color-table-row-alt: #0F1729;
+  --color-table-divider: #1F2937;
+  --color-table-hover: rgba(31, 41, 55, 0.7);
+
+  --color-card-bg: #111827;
+  --color-modal-bg: #111827;
+
+  --color-status-ok-bg: rgba(22, 163, 74, 0.15);
+  --color-status-ok-text: #4ADE80;
+  --color-status-err-bg: rgba(239, 68, 68, 0.12);
+  --color-status-err-text: #F87171;
+
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 16px rgba(245, 158, 11, 0.35);
+
+  --scrollbar-track: #111827;
+  --scrollbar-thumb: #374151;
+  --scrollbar-thumb-h: #4B5563;
+
+  /* DatePicker */
+  --dp-bg: #111827;
+  --dp-header-bg: #1F2937;
+  --dp-border: #374151;
+  --dp-day-color: #E5E7EB;
+  --dp-day-name-color: #9CA3AF;
+  --dp-month-color: #FBBF24;
+  --dp-select-bg: #111827;
+  --dp-select-color: #F3F4F6;
+  --dp-select-border: #4B5563;
+}
+
+/* === LIGHT THEME === */
+.light-theme {
+  --color-bg-base: #F1F5F9;
+  --color-bg-surface: #FFFFFF;
+  --color-bg-elevated: #F8FAFC;
+  --color-bg-overlay: #E2E8F0;
+
+  --color-border: #E2E8F0;
+  --color-border-subtle: #CBD5E1;
+
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94A3B8;
+  --color-text-placeholder: #94A3B8;
+
+  --color-gold-400: #F59E0B;
+  --color-gold-500: #D97706;
+  --color-gold-600: #B45309;
+
+  --color-input-bg: #FFFFFF;
+  --color-input-border: #CBD5E1;
+
+  --color-sidebar-bg: #FFFFFF;
+  --color-sidebar-hover: #F1F5F9;
+  --color-sidebar-text: #475569;
+  --color-sidebar-active-text: #030712;
+  --color-sidebar-border: #E2E8F0;
+
+  --color-table-head: #F8FAFC;
+  --color-table-row: #FFFFFF;
+  --color-table-row-alt: #F8FAFC;
+  --color-table-divider: #E2E8F0;
+  --color-table-hover: rgba(241, 245, 249, 0.9);
+
+  --color-card-bg: #FFFFFF;
+  --color-modal-bg: #FFFFFF;
+
+  --color-status-ok-bg: rgba(22, 163, 74, 0.1);
+  --color-status-ok-text: #16A34A;
+  --color-status-err-bg: rgba(220, 38, 38, 0.08);
+  --color-status-err-text: #DC2626;
+
+  --shadow-card: 0 2px 16px rgba(0, 0, 0, 0.08);
+  --shadow-glow: 0 0 16px rgba(245, 158, 11, 0.2);
+
+  --scrollbar-track: #F1F5F9;
+  --scrollbar-thumb: #CBD5E1;
+  --scrollbar-thumb-h: #94A3B8;
+
+  /* DatePicker */
+  --dp-bg: #FFFFFF;
+  --dp-header-bg: #F8FAFC;
+  --dp-border: #CBD5E1;
+  --dp-day-color: #1E293B;
+  --dp-day-name-color: #64748B;
+  --dp-month-color: #B45309;
+  --dp-select-bg: #FFFFFF;
+  --dp-select-color: #0F172A;
+  --dp-select-border: #CBD5E1;
+}
+
+/* ──────────────────────────────────────────────
+   BASE LAYER
+────────────────────────────────────────────── */
 @layer base {
-  body {
-    @apply bg-dark-950 text-gray-100 font-sans antialiased min-h-screen;
-    margin: 0;
-    padding: 0;
+
+  *,
+  *::before,
+  *::after {
     box-sizing: border-box;
   }
 
-  /* Scrollbar override for dark theme */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--color-bg-base);
+    color: var(--color-text-primary);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  /* Scrollbar */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
   }
 
   ::-webkit-scrollbar-track {
-    background: #111827;
+    background: var(--scrollbar-track);
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #374151;
+    background: var(--scrollbar-thumb);
     border-radius: 4px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #4B5563;
+    background: var(--scrollbar-thumb-h);
   }
 
-  /* Date Picker Improvements */
-  input[type="date"] {
+  /* Inputs date */
+  input[type="date"],
+  input[type="month"] {
     color-scheme: dark;
     position: relative;
   }
 
-  /* Customize native calendar icon to match gold theme */
+  .light-theme input[type="date"],
+  .light-theme input[type="month"] {
+    color-scheme: light;
+  }
+
   ::-webkit-calendar-picker-indicator {
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23FBBF24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>');
     background-position: center;
@@ -51,42 +203,44 @@
   }
 }
 
-/* React Datepicker Custom Theme & Portal Fixes */
+/* ──────────────────────────────────────────────
+   REACT DATEPICKER THEME
+────────────────────────────────────────────── */
 .react-datepicker-portal {
   z-index: 9999 !important;
 }
 
 .react-datepicker {
-  background-color: #111827 !important;
-  border: 1px solid #374151 !important;
+  background-color: var(--dp-bg) !important;
+  border: 1px solid var(--dp-border) !important;
   border-radius: 12px !important;
-  font-family: inherit !important;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7) !important;
-  color: #f3f4f6 !important;
+  font-family: 'Inter', inherit !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.35) !important;
+  color: var(--dp-day-color) !important;
 }
 
 .react-datepicker__header {
-  background-color: #1f2937 !important;
-  border-bottom: 1px solid #374151 !important;
+  background-color: var(--dp-header-bg) !important;
+  border-bottom: 1px solid var(--dp-border) !important;
   border-radius: 12px 12px 0 0 !important;
   padding: 16px 8px 8px 8px !important;
 }
 
 .react-datepicker__current-month {
-  color: #fbbf24 !important;
+  color: var(--dp-month-color) !important;
   font-weight: 700 !important;
   text-transform: capitalize;
   margin-bottom: 12px !important;
 }
 
 .react-datepicker__day-name {
-  color: #9ca3af !important;
+  color: var(--dp-day-name-color) !important;
   width: 2.5rem !important;
   line-height: 2.5rem !important;
 }
 
 .react-datepicker__day {
-  color: #e5e7eb !important;
+  color: var(--dp-day-color) !important;
   width: 2.5rem !important;
   line-height: 2.5rem !important;
   transition: all 0.2s !important;
@@ -94,68 +248,89 @@
 }
 
 .react-datepicker__day:hover {
-  background-color: rgba(251, 191, 36, 0.15) !important;
-  color: #fbbf24 !important;
+  background-color: rgba(245, 158, 11, 0.12) !important;
+  color: var(--color-gold-500) !important;
 }
 
 .react-datepicker__day--selected {
-  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%) !important;
+  background: linear-gradient(135deg, #FBBF24 0%, #D97706 100%) !important;
   color: #000 !important;
   font-weight: 800 !important;
 }
 
-/* Fix for Year Dropdown / Month Dropdown Theme */
+.react-datepicker__day--outside-month {
+  opacity: 0.35 !important;
+}
+
 .react-datepicker__year-dropdown,
 .react-datepicker__month-dropdown,
 .react-datepicker__month-year-dropdown {
-  background-color: #111827 !important;
-  border: 1px solid #374151 !important;
+  background-color: var(--dp-bg) !important;
+  border: 1px solid var(--dp-border) !important;
   border-radius: 8px !important;
 }
 
 .react-datepicker__year-option,
 .react-datepicker__month-option {
-  color: #e5e7eb !important;
+  color: var(--dp-day-color) !important;
   padding: 8px !important;
-  background-color: #111827 !important;
+  background-color: var(--dp-bg) !important;
 }
 
 .react-datepicker__year-option:hover,
 .react-datepicker__month-option:hover {
-  background-color: rgba(251, 191, 36, 0.1) !important;
-  color: #fbbf24 !important;
+  background-color: rgba(245, 158, 11, 0.1) !important;
+  color: var(--color-gold-500) !important;
 }
 
 .react-datepicker__year-option--selected_year {
-  color: #fbbf24 !important;
+  color: var(--color-gold-500) !important;
   font-weight: bold;
 }
 
-/* Dropdown native select fallback styling */
 .react-datepicker__year-select,
 .react-datepicker__month-select {
-  background-color: #111827 !important;
-  color: #f3f4f6 !important;
-  border: 1px solid #4b5563 !important;
+  background-color: var(--dp-select-bg) !important;
+  color: var(--dp-select-color) !important;
+  border: 1px solid var(--dp-select-border) !important;
   padding: 4px !important;
   border-radius: 6px !important;
   outline: none !important;
 }
 
 .react-datepicker__navigation-icon::before {
-  border-color: #9ca3af !important;
+  border-color: var(--dp-day-name-color) !important;
 }
 
 .react-datepicker__triangle {
   display: none !important;
 }
 
+/* ──────────────────────────────────────────────
+   UTILITIES
+────────────────────────────────────────────── */
 @layer utilities {
   .text-shadow {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
   }
 
   .gold-gradient {
     background: linear-gradient(135deg, #FBBF24 0%, #D97706 100%);
   }
+
+  /* Transition helper for theme */
+  .theme-transition {
+    transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+  }
+}
+
+/* ──────────────────────────────────────────────
+   MOBILE OVERLAY SIDEBAR
+────────────────────────────────────────────── */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px);
+  z-index: 40;
 }

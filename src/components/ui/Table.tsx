@@ -1,8 +1,10 @@
 import React from 'react';
+import { Loader2 } from 'lucide-react';
 
 interface Column<T> {
     header: string;
     accessor: (row: T) => React.ReactNode;
+    className?: string;
 }
 
 interface TableProps<T> {
@@ -10,44 +12,71 @@ interface TableProps<T> {
     data: T[];
     isLoading?: boolean;
     emptyMessage?: string;
+    emptyIcon?: React.ReactNode;
 }
 
-export function Table<T>({ columns, data, isLoading, emptyMessage = "No hay resultados" }: TableProps<T>) {
+export function Table<T>({ columns, data, isLoading, emptyMessage = 'No hay resultados', emptyIcon }: TableProps<T>) {
     if (isLoading) {
         return (
-            <div className="w-full h-32 flex items-center justify-center text-gray-500">
-                <svg className="animate-spin h-6 w-6 mr-3 text-gold-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Cargando datos...
+            <div
+                className="w-full py-16 flex flex-col items-center justify-center gap-3 rounded-xl"
+                style={{ color: 'var(--color-text-muted)' }}
+            >
+                <Loader2 size={28} className="animate-spin" style={{ color: 'var(--color-gold-500)' }} />
+                <span className="text-sm font-medium">Cargando datos...</span>
             </div>
         );
     }
 
     if (data.length === 0) {
         return (
-            <div className="w-full h-32 flex items-center justify-center text-gray-500">
-                {emptyMessage}
+            <div
+                className="w-full py-16 flex flex-col items-center justify-center gap-3 rounded-xl"
+                style={{ color: 'var(--color-text-muted)' }}
+            >
+                {emptyIcon && <div className="opacity-40">{emptyIcon}</div>}
+                <span className="text-sm">{emptyMessage}</span>
             </div>
         );
     }
 
     return (
-        <div className="overflow-x-auto w-full rounded-xl border border-dark-800">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead className="bg-dark-800 text-gray-300 uppercase font-semibold text-xs tracking-wider">
-                    <tr>
+        <div
+            className="w-full overflow-x-auto rounded-xl"
+            style={{ border: '1px solid var(--color-border)' }}
+        >
+            <table className="w-full text-left text-sm">
+                <thead>
+                    <tr style={{ background: 'var(--color-table-head)', borderBottom: '1px solid var(--color-table-divider)' }}>
                         {columns.map((col, idx) => (
-                            <th key={idx} className="px-6 py-4">{col.header}</th>
+                            <th
+                                key={idx}
+                                className={`px-5 py-3.5 text-xs font-semibold uppercase tracking-wider ${col.className ?? ''}`}
+                                style={{ color: 'var(--color-text-muted)' }}
+                            >
+                                {col.header}
+                            </th>
                         ))}
                     </tr>
                 </thead>
-                <tbody className="bg-dark-900 divide-y divide-dark-800">
+                <tbody
+                    style={{ background: 'var(--color-table-row)' }}
+                >
                     {data.map((row, rowIdx) => (
-                        <tr key={rowIdx} className="hover:bg-dark-800/50 transition-colors">
+                        <tr
+                            key={rowIdx}
+                            className="transition-colors duration-150 hover:brightness-95"
+                            style={{
+                                background: rowIdx % 2 === 0 ? 'var(--color-table-row)' : 'var(--color-table-row-alt)',
+                                borderBottom: '1px solid var(--color-table-divider)',
+                            }}
+                        >
                             {columns.map((col, colIdx) => (
-                                <td key={colIdx} className="px-6 py-4 text-gray-200">
+                                <td
+                                    key={colIdx}
+                                    className={`px-5 py-3.5 ${col.className ?? ''}`}
+                                    style={{ color: 'var(--color-text-primary)' }}
+                                >
                                     {col.accessor(row)}
                                 </td>
                             ))}

@@ -1,58 +1,48 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
+import { Input, Select } from '../components/ui/Input';
 import { Table } from '../components/ui/Table';
 import { memberService } from '../services/memberService';
 import { planService } from '../services/planService';
 import { Member, Plan, CreateMemberRequest } from '../types';
 import { toast } from 'sonner';
-import { Plus, Trash2, Edit, Calendar as CalendarIcon, Search, ChevronLeft, ChevronRight, X, AlertCircle } from 'lucide-react';
+import {
+    Plus, Trash2, Edit, Calendar as CalendarIcon,
+    Search, ChevronLeft, ChevronRight, X, AlertCircle, Users
+} from 'lucide-react';
 import { Modal } from '../components/ui/Modal';
 import { formatPlanName } from '../lib/planUtils';
 import DatePicker, { registerLocale } from 'react-datepicker';
-import "react-datepicker/dist/react-datepicker.css";
+import 'react-datepicker/dist/react-datepicker.css';
 import { es } from 'date-fns/locale/es';
 
 registerLocale('es', es);
 
 const PAGE_SIZE = 20;
 
-
-
 export const Members: React.FC = () => {
     const [members, setMembers] = useState<Member[]>([]);
     const [plans, setPlans] = useState<Plan[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Paginación (sólo activa cuando no hay búsqueda)
     const [pageIndex, setPageIndex] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [totalElements, setTotalElements] = useState(0);
 
-    // Búsqueda por DNI
     const [searchInput, setSearchInput] = useState('');
     const [isSearchMode, setIsSearchMode] = useState(false);
 
-    // Modal / Form state
     const [showForm, setShowForm] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState<CreateMemberRequest>({
         dni: '', firstName: '', lastName: '', phoneNumber: '', email: '', planId: 0, birthDate: ''
     });
 
-    // Error Feedback Modal
-    const [errorModal, setErrorModal] = useState<{
-        isOpen: boolean;
-        title: string;
-        message: string;
-    }>({
-        isOpen: false,
-        title: '',
-        message: ''
+    const [errorModal, setErrorModal] = useState<{ isOpen: boolean; title: string; message: string; }>({
+        isOpen: false, title: '', message: ''
     });
 
-    // ── Carga paginada (modo lista) ──────────────────────────────────
     const fetchMembers = useCallback(async () => {
         setLoading(true);
         try {
@@ -67,19 +57,12 @@ export const Members: React.FC = () => {
         }
     }, [pageIndex]);
 
-    useEffect(() => {
-        if (!isSearchMode) fetchMembers();
-    }, [fetchMembers, isSearchMode]);
+    useEffect(() => { if (!isSearchMode) fetchMembers(); }, [fetchMembers, isSearchMode]);
+    useEffect(() => { planService.getAllPlans().then(setPlans).catch(console.error); }, []);
 
-    useEffect(() => {
-        planService.getAllPlans().then(setPlans).catch(console.error);
-    }, []);
-
-    // ── Búsqueda puntual ─────────────────────────────────────────────
     const handleSearch = async () => {
         const query = searchInput.trim();
         if (!query) return;
-
         setLoading(true);
         setIsSearchMode(true);
         try {
@@ -88,7 +71,8 @@ export const Members: React.FC = () => {
             setTotalPages(0);
             setTotalElements(1);
         } catch {
-            toast.error('Error al buscar socio');
+            toast.error('Socio no encontrado para ese DNI');
+            setMembers([]);
         } finally {
             setLoading(false);
         }
@@ -100,7 +84,6 @@ export const Members: React.FC = () => {
         setPageIndex(0);
     };
 
-    // ── CRUD handlers ────────────────────────────────────────────────
     const handleOpenCreate = () => {
         setFormData({ dni: '', firstName: '', lastName: '', phoneNumber: '', email: '', planId: plans[0]?.id || 0, birthDate: '' });
         setIsEditing(false);
@@ -108,17 +91,15 @@ export const Members: React.FC = () => {
     };
 
     const handleOpenEdit = (m: Member) => {
-        // Normalizar birthDate si viene como array [YYYY, MM, DD] desde el backend
         let birthDateStr = '';
         if (m.birthDate) {
             if (Array.isArray(m.birthDate)) {
-                const [y, mm, d] = m.birthDate;
+                const [y, mm, d] = m.birthDate as number[];
                 birthDateStr = `${y}-${String(mm).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
             } else {
                 birthDateStr = m.birthDate as string;
             }
         }
-
         setFormData({
             dni: m.dni,
             firstName: m.firstName,
@@ -140,17 +121,16 @@ export const Members: React.FC = () => {
             if (isSearchMode) handleClearSearch(); else fetchMembers();
         } catch (err: any) {
             const rawMsg = err.response?.data?.message || '';
-
             if (rawMsg.includes('active payments')) {
                 setErrorModal({
                     isOpen: true,
                     title: 'Operación denegada',
-                    message: 'El socio posee pagos asociados en el sistema. Su eliminación afectaría la integridad del historial de transacciones y los reportes de ingresos. No es posible eliminar socios con registros de pago vigentes.'
+                    message: 'El socio posee pagos asociados en el sistema. Su eliminación afectaría la integridad del historial de transacciones. No es posible eliminar socios con registros de pago vigentes.'
                 });
             } else if (rawMsg.includes('not found')) {
-                toast.error('Socio no encontrado. Es posible que ya haya sido eliminado.');
+                toast.error('Socio no encontrado.');
             } else {
-                toast.error('Error al intentar eliminar el socio. Intente nuevamente.');
+                toast.error('Error al intentar eliminar el socio.');
             }
         }
     };
@@ -180,46 +160,68 @@ export const Members: React.FC = () => {
         }
     };
 
-    // ── Form view ────────────────────────────────────────────────────
+    // ── Form view ────────────────
     if (showForm) {
         return (
             <div className="max-w-2xl mx-auto space-y-6">
-                <h1 className="text-3xl font-bold">{isEditing ? 'Editar Socio' : 'Nuevo Socio'}</h1>
+                <div>
+                    <h1 className="text-3xl font-black tracking-tight" style={{ color: 'var(--color-text-primary)' }}>
+                        {isEditing ? 'Editar Socio' : 'Nuevo Socio'}
+                    </h1>
+                    <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                        {isEditing ? 'Modificá los datos del socio.' : 'Completá los datos para registrar un nuevo socio.'}
+                    </p>
+                </div>
+
                 <Card>
                     <CardContent className="pt-6">
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <Input
-                                label="DNI"
+                                label="DNI *"
                                 value={formData.dni}
                                 onChange={(e) => setFormData({ ...formData, dni: e.target.value })}
                                 disabled={isEditing}
+                                placeholder="Ej: 38425871"
                                 required
                             />
-                            <div className="grid grid-cols-2 gap-4">
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <Input
-                                    label="Nombre"
+                                    label="Nombre *"
                                     value={formData.firstName}
                                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                                    placeholder="Nombre"
                                     required
                                 />
                                 <Input
-                                    label="Apellido"
+                                    label="Apellido *"
                                     value={formData.lastName}
                                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                                    placeholder="Apellido"
                                     required
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <Input
-                                    label="Teléfono"
+                                    label="Teléfono *"
                                     value={formData.phoneNumber}
                                     onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                                    placeholder="Ej: 1154321234"
                                     required
                                 />
+
+                                {/* DatePicker Fecha de Nacimiento */}
                                 <div className="flex flex-col gap-1.5 w-full">
-                                    <label className="text-sm font-medium text-gray-300">Fecha de Nacimiento</label>
+                                    <label className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>
+                                        Fecha de Nacimiento *
+                                    </label>
                                     <div className="relative">
-                                        <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gold-500 z-10 pointer-events-none" size={18} />
+                                        <CalendarIcon
+                                            className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10"
+                                            size={16}
+                                            style={{ color: 'var(--color-gold-500)' }}
+                                        />
                                         <DatePicker
                                             selected={formData.birthDate ? new Date(formData.birthDate + 'T00:00:00') : null}
                                             onChange={(date: Date | null) => {
@@ -231,7 +233,7 @@ export const Members: React.FC = () => {
                                             dateFormat="dd/MM/yyyy"
                                             locale="es"
                                             placeholderText="dd/mm/aaaa"
-                                            className="w-full px-4 py-2.5 pl-10 bg-dark-900 border border-dark-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-500 transition-all font-sans"
+                                            className="w-full px-4 py-2.5 pl-9 rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-yellow-500/40 bg-[var(--color-input-bg)] border-[1px] border-[var(--color-input-border)] text-[var(--color-text-primary)]"
                                             wrapperClassName="w-full"
                                             required
                                             showYearDropdown
@@ -242,29 +244,35 @@ export const Members: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
+
                             <Input
                                 label="Email (Opcional)"
                                 type="email"
                                 value={formData.email}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                placeholder="correo@ejemplo.com"
                             />
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-sm font-medium text-gray-300">Plan Asignado</label>
-                                <select
-                                    className="w-full px-4 py-2.5 bg-dark-900 border border-dark-700 rounded-lg text-white appearance-none"
-                                    value={formData.planId}
-                                    onChange={(e) => setFormData({ ...formData, planId: Number(e.target.value) })}
-                                    required
-                                >
-                                    <option value="" disabled>Seleccione un plan</option>
-                                    {plans.map(p => (
-                                        <option key={p.id} value={p.id}>{formatPlanName(p.name)}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="flex gap-4 pt-4 border-t border-dark-800">
+
+                            <Select
+                                label="Plan Asignado *"
+                                value={formData.planId}
+                                onChange={(e) => setFormData({ ...formData, planId: Number(e.target.value) })}
+                                required
+                            >
+                                <option value="" disabled>Seleccione un plan</option>
+                                {plans.map(p => (
+                                    <option key={p.id} value={p.id}>{formatPlanName(p.name)}</option>
+                                ))}
+                            </Select>
+
+                            <div
+                                className="flex flex-col sm:flex-row gap-3 pt-4"
+                                style={{ borderTop: '1px solid var(--color-border)' }}
+                            >
                                 <Button type="submit" className="flex-1">Guardar</Button>
-                                <Button type="button" variant="secondary" onClick={() => setShowForm(false)}>Cancelar</Button>
+                                <Button type="button" variant="secondary" onClick={() => setShowForm(false)}>
+                                    Cancelar
+                                </Button>
                             </div>
                         </form>
                     </CardContent>
@@ -273,63 +281,65 @@ export const Members: React.FC = () => {
         );
     }
 
-    // ── List view ────────────────────────────────────────────────────
-
-
+    // ── List view ────────────────
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold">Gestión de Socios</h1>
-                <Button onClick={handleOpenCreate}>
-                    <Plus size={18} className="mr-2" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-black tracking-tight" style={{ color: 'var(--color-text-primary)' }}>
+                        Gestión de Socios
+                    </h1>
+                    <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                        {totalElements > 0 ? `${totalElements} socios registrados` : 'Administrá los socios del gimnasio'}
+                    </p>
+                </div>
+                <Button onClick={handleOpenCreate} className="shrink-0">
+                    <Plus size={16} className="mr-1.5" />
                     Nuevo Socio
                 </Button>
             </div>
 
-            {/* Búsqueda por DNI */}
-            <div className="flex gap-2 items-stretch">
-                <input
-                    type="text"
+            {/* Búsqueda */}
+            <div className="flex gap-2">
+                <Input
+                    placeholder="Buscar por DNI…"
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                    placeholder="Buscar por DNI…"
-                    className="flex-1 h-11 px-4 bg-dark-900 border border-dark-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-500 transition-all"
+                    icon={<Search size={16} />}
+                    className="flex-1"
                 />
-
-                {/* Botón lupa */}
-                <button
+                <Button
                     onClick={handleSearch}
                     disabled={loading || !searchInput.trim()}
-                    className="h-11 w-11 flex items-center justify-center bg-gold-500 hover:bg-gold-400 disabled:opacity-40 text-dark-950 font-semibold rounded-lg transition-all shrink-0"
-                    title="Buscar"
+                    className="shrink-0"
                 >
-                    <Search size={18} />
-                </button>
-
-                {/* Botón limpiar (sólo visible cuando hay búsqueda activa) */}
+                    Buscar
+                </Button>
                 {isSearchMode && (
-                    <button
+                    <Button
+                        variant="secondary"
                         onClick={handleClearSearch}
-                        className="h-11 w-11 flex items-center justify-center bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-all shrink-0"
+                        className="shrink-0"
                         title="Limpiar búsqueda"
                     >
-                        <X size={18} />
-                    </button>
+                        <X size={16} />
+                    </Button>
                 )}
             </div>
 
-            {/* Badge de modo */}
+            {/* Badge modo búsqueda */}
             {isSearchMode && (
-                <div className="flex items-center gap-2 text-sm">
-                    <span className="px-2 py-0.5 bg-gold-500/10 border border-gold-500/30 text-gold-400 rounded-full text-xs font-semibold">
+                <div className="flex items-center gap-2">
+                    <span
+                        className="px-2.5 py-1 rounded-full text-xs font-semibold"
+                        style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', color: 'var(--color-gold-500)' }}
+                    >
                         Resultado de búsqueda
                     </span>
-                    <span className="text-gray-400">
-                        {members.length === 0
-                            ? 'Sin resultados'
-                            : `${members.length} socio${members.length !== 1 ? 's' : ''} encontrado${members.length !== 1 ? 's' : ''}`}
+                    <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                        {members.length === 0 ? 'Sin resultados' : `${members.length} socio${members.length !== 1 ? 's' : ''} encontrado${members.length !== 1 ? 's' : ''}`}
                     </span>
                 </div>
             )}
@@ -341,16 +351,38 @@ export const Members: React.FC = () => {
                         data={members}
                         isLoading={loading}
                         emptyMessage={isSearchMode ? 'Sin resultados para esta búsqueda' : 'No hay socios registrados'}
+                        emptyIcon={<Users size={48} />}
                         columns={[
-                            { header: 'DNI', accessor: (m) => m.dni },
-                            { header: 'Nombre', accessor: (m) => <span className="font-semibold text-gray-100">{m.firstName} {m.lastName}</span> },
+                            {
+                                header: 'DNI',
+                                accessor: (m) => (
+                                    <span className="font-mono text-xs font-semibold" style={{ color: 'var(--color-text-secondary)' }}>
+                                        {m.dni}
+                                    </span>
+                                )
+                            },
+                            {
+                                header: 'Nombre completo',
+                                accessor: (m) => (
+                                    <span className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                                        {m.firstName} {m.lastName}
+                                    </span>
+                                )
+                            },
                             { header: 'Edad', accessor: (m) => m.age || '-' },
                             { header: 'Teléfono', accessor: (m) => m.phoneNumber || '-' },
-                            { header: 'Plan', accessor: (m) => m.planDescription ? <span className="text-gold-400 font-medium">{formatPlanName(m.planDescription)}</span> : '-' },
+                            {
+                                header: 'Plan',
+                                accessor: (m) => m.planDescription ? (
+                                    <span className="font-medium" style={{ color: 'var(--color-gold-500)' }}>
+                                        {formatPlanName(m.planDescription)}
+                                    </span>
+                                ) : '-'
+                            },
                             {
                                 header: 'Vencimiento',
                                 accessor: (m) => m.expirationDate ? (
-                                    <span className="text-gray-300 font-medium">
+                                    <span className="font-mono text-xs">
                                         {m.expirationDate.split('-').reverse().join('/')}
                                     </span>
                                 ) : '-'
@@ -358,18 +390,18 @@ export const Members: React.FC = () => {
                             {
                                 header: 'Estado',
                                 accessor: (m) => m.active
-                                    ? <span className="px-2 py-1 bg-green-900/40 text-green-400 rounded-full text-xs font-bold">ACTIVO</span>
-                                    : <span className="px-2 py-1 bg-red-900/40 text-red-500 rounded-full text-xs font-bold">INACTIVO</span>
+                                    ? <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: 'var(--color-status-ok-bg)', color: 'var(--color-status-ok-text)' }}>ACTIVO</span>
+                                    : <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: 'var(--color-status-err-bg)', color: 'var(--color-status-err-text)' }}>INACTIVO</span>
                             },
                             {
                                 header: 'Acciones',
                                 accessor: (m) => (
-                                    <div className="flex gap-2">
-                                        <Button size="sm" variant="secondary" onClick={() => handleOpenEdit(m)}>
-                                            <Edit size={16} />
+                                    <div className="flex gap-1.5">
+                                        <Button size="sm" variant="secondary" onClick={() => handleOpenEdit(m)} title="Editar">
+                                            <Edit size={14} />
                                         </Button>
-                                        <Button size="sm" variant="danger" onClick={() => handleDelete(m.dni)}>
-                                            <Trash2 size={16} />
+                                        <Button size="sm" variant="danger" onClick={() => handleDelete(m.dni)} title="Eliminar">
+                                            <Trash2 size={14} />
                                         </Button>
                                     </div>
                                 )
@@ -379,20 +411,20 @@ export const Members: React.FC = () => {
                 </CardContent>
             </Card>
 
-            {/* Paginación (oculta en modo búsqueda) */}
+            {/* Paginación */}
             {!isSearchMode && totalPages > 1 && (
-                <div className="flex items-center justify-between pt-2">
-                    <span className="text-sm text-gray-400">
-                        Página <span className="text-white font-semibold">{pageIndex + 1}</span> de{' '}
-                        <span className="text-white font-semibold">{totalPages}</span>
-                        {' '}·{' '}
-                        <span className="text-gold-400 font-semibold">{totalElements}</span> socio{totalElements !== 1 ? 's' : ''}
+                <div className="flex items-center justify-between">
+                    <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                        Página <b style={{ color: 'var(--color-text-primary)' }}>{pageIndex + 1}</b> de{' '}
+                        <b style={{ color: 'var(--color-text-primary)' }}>{totalPages}</b>
+                        {' — '}
+                        <span style={{ color: 'var(--color-gold-500)', fontWeight: 700 }}>{totalElements}</span> socios
                     </span>
                     <div className="flex gap-2">
                         <Button
                             variant="secondary"
                             size="sm"
-                            onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
+                            onClick={() => setPageIndex(p => Math.max(0, p - 1))}
                             disabled={pageIndex === 0 || loading}
                         >
                             <ChevronLeft size={16} className="mr-1" /> Anterior
@@ -400,7 +432,7 @@ export const Members: React.FC = () => {
                         <Button
                             variant="secondary"
                             size="sm"
-                            onClick={() => setPageIndex((p) => Math.min(totalPages - 1, p + 1))}
+                            onClick={() => setPageIndex(p => Math.min(totalPages - 1, p + 1))}
                             disabled={pageIndex >= totalPages - 1 || loading}
                         >
                             Siguiente <ChevronRight size={16} className="ml-1" />
@@ -409,6 +441,7 @@ export const Members: React.FC = () => {
                 </div>
             )}
 
+            {/* Error Modal */}
             <Modal
                 isOpen={errorModal.isOpen}
                 onClose={() => setErrorModal({ ...errorModal, isOpen: false })}
@@ -419,13 +452,16 @@ export const Members: React.FC = () => {
                     </Button>
                 }
             >
-                <div className="flex flex-col items-center gap-6 py-2">
-                    <div className="w-20 h-20 rounded-full bg-red-950/30 border border-red-500/20 flex items-center justify-center text-red-500 animate-in zoom-in duration-300">
-                        <AlertCircle size={40} />
+                <div className="flex flex-col items-center gap-5 py-2">
+                    <div
+                        className="w-16 h-16 rounded-full flex items-center justify-center"
+                        style={{ background: 'var(--color-status-err-bg)', color: 'var(--color-status-err-text)' }}
+                    >
+                        <AlertCircle size={32} />
                     </div>
-                    <div className="space-y-4 w-full">
-                        <p className="text-xl font-bold text-white text-center">Acción denegada</p>
-                        <p className="text-gray-300 leading-relaxed text-pretty text-justify">
+                    <div className="space-y-2 text-center">
+                        <p className="font-bold" style={{ color: 'var(--color-text-primary)' }}>Acción denegada</p>
+                        <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
                             {errorModal.message}
                         </p>
                     </div>
