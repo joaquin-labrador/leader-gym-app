@@ -1,135 +1,314 @@
-import React, { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Home, Users, Dumbbell, CreditCard, CheckCircle, History, ChevronLeft, Menu, LogOut, User as UserIcon, FileText, Banknote } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import {
+    Home, Users, Dumbbell, CreditCard, CheckCircle,
+    History, ChevronLeft, Menu, LogOut, User as UserIcon,
+    FileText, Banknote, X, Sun, Moon
+} from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
+
+const navItems = [
+    { to: '/', label: 'Inicio', icon: <Home size={20} />, end: true },
+    { to: '/check-in', label: 'Check-In', icon: <CheckCircle size={20} /> },
+    { to: '/members', label: 'Socios', icon: <Users size={20} /> },
+    { to: '/plans', label: 'Planes', icon: <Dumbbell size={20} /> },
+    { to: '/payments', label: 'Pagos de Plan', icon: <CreditCard size={20} /> },
+    { to: '/extra-payments', label: 'Pagos Sueltos', icon: <Banknote size={20} /> },
+    { to: '/receipts', label: 'Historial de Ingresos', icon: <History size={20} /> },
+    { to: '/payment-history', label: 'Arqueo / Caja', icon: <FileText size={20} /> },
+];
 
 export const Layout: React.FC = () => {
-    const [isHidden, setIsHidden] = useState(false);
+    const [desktopCollapsed, setDesktopCollapsed] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
     const { user, logout } = useAuth();
+    const { theme, toggleTheme, isDark } = useTheme();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Close mobile menu on route change
+    useEffect(() => {
+        setMobileOpen(false);
+    }, [location.pathname]);
+
+    // Prevent body scroll when mobile menu open
+    useEffect(() => {
+        document.body.style.overflow = mobileOpen ? 'hidden' : '';
+        return () => { document.body.style.overflow = ''; };
+    }, [mobileOpen]);
 
     const handleLogout = async () => {
         try {
             await logout();
             toast.success('Sesión cerrada correctamente');
             navigate('/login');
-        } catch (err) {
+        } catch {
             toast.error('Error al cerrar sesión');
         }
     };
 
-    const navItems = [
-        { to: '/', label: 'Inicio', icon: <Home size={20} /> },
-        { to: '/check-in', label: 'Check-In', icon: <CheckCircle size={20} /> },
-        { to: '/members', label: 'Socios', icon: <Users size={20} /> },
-        { to: '/plans', label: 'Planes', icon: <Dumbbell size={20} /> },
-        { to: '/payments', label: 'Pagos de Plan', icon: <CreditCard size={20} /> },
-        { to: '/extra-payments', label: 'Pagos Sueltos', icon: <Banknote size={20} /> },
-        { to: '/receipts', label: 'Historial de Ingresos', icon: <History size={20} /> },
-        { to: '/payment-history', label: 'Arqueo/Caja', icon: <FileText size={20} /> },
-    ];
-
-    return (
-        <div className="flex min-h-screen bg-dark-950 text-gray-100 font-sans">
-            {/* Toggle Button for when sidebar is hidden */}
-            {isHidden && (
-                <button
-                    onClick={() => setIsHidden(false)}
-                    className="fixed top-6 left-6 z-[60] bg-gold-500 text-dark-950 p-3 rounded-xl shadow-glow hover:scale-105 transition-all animate-in fade-in zoom-in duration-300"
-                    title="Mostrar menú"
-                >
-                    <Menu size={24} />
-                </button>
-            )}
-
-            {/* Sidebar */}
-            <aside
-                className={`bg-dark-900 border-r border-dark-800 flex flex-col fixed inset-y-0 shadow-glow transition-all duration-300 ease-in-out z-50 ${isHidden ? '-translate-x-full' : 'translate-x-0'
-                    } w-64`}
+    const sidebarContent = (isMobile = false) => (
+        <div
+            className="flex flex-col h-full theme-transition"
+            style={{
+                background: 'var(--color-sidebar-bg)',
+                borderRight: '1px solid var(--color-sidebar-border)'
+            }}
+        >
+            {/* Logo Header */}
+            <div
+                className="flex items-center justify-between px-5 py-4 border-b"
+                style={{ borderColor: 'var(--color-sidebar-border)' }}
             >
-                <div className="p-6 flex items-center justify-between border-b border-dark-800">
-                    <div className="text-2xl font-black tracking-tight text-white flex items-center gap-2 overflow-hidden whitespace-nowrap">
-                        <span className="text-gold-500">LEADER</span> GYM
-                    </div>
-
-                    <button
-                        onClick={() => setIsHidden(true)}
-                        className="bg-dark-800 text-gray-400 p-2 rounded-lg hover:bg-dark-700 hover:text-gold-500 transition-colors"
-                        title="Ocultar menú"
-                    >
-                        <ChevronLeft size={20} />
-                    </button>
-                </div>
-
-                {/* User Info Section */}
-                {user && (
-                    <div className="p-4 border-b border-dark-800">
-                        <div className="flex items-center gap-3 px-4 py-2 bg-dark-800/50 rounded-xl border border-dark-800">
-                            <div className="w-10 h-10 rounded-full bg-gold-500/10 flex items-center justify-center text-gold-500">
-                                <UserIcon size={20} />
-                            </div>
-                            <div className="flex-1 overflow-hidden">
-                                <p className="text-sm font-bold text-white truncate">{user.username}</p>
-                                <p className="text-[10px] uppercase tracking-wider text-gold-500 font-medium">{user.role}</p>
-                            </div>
-                        </div>
+                {(!desktopCollapsed || isMobile) && (
+                    <div className="text-xl font-black tracking-tight select-none" style={{ color: 'var(--color-text-primary)' }}>
+                        <span style={{ color: 'var(--color-gold-400)' }}>LEADER</span>{' '}
+                        <span>GYM</span>
                     </div>
                 )}
-
-                <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-                    {navItems.map((item) => (
-                        <NavLink
-                            key={item.to}
-                            to={item.to}
-                            className={({ isActive }) =>
-                                `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium whitespace-nowrap ${isActive
-                                    ? 'bg-gold-500 text-dark-950 shadow-[0_0_10px_rgba(245,158,11,0.5)]'
-                                    : 'text-gray-400 hover:bg-dark-800 hover:text-white'
-                                }`
-                            }
-                        >
-                            {item.icon}
-                            <span>{item.label}</span>
-                        </NavLink>
-                    ))}
-                </nav>
-
-                {/* Logout Button */}
-                <div className="p-4 border-t border-dark-800">
+                {isMobile ? (
                     <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-3 w-full px-4 py-3 text-gray-400 hover:bg-red-500/10 hover:text-red-500 rounded-xl transition-all duration-200 font-medium"
+                        onClick={() => setMobileOpen(false)}
+                        className="p-2 rounded-lg transition-colors"
+                        style={{ color: 'var(--color-text-muted)' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-sidebar-hover)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                        aria-label="Cerrar menú"
                     >
-                        <LogOut size={20} />
-                        <span>Cerrar Sesión</span>
+                        <X size={20} />
                     </button>
-                </div>
+                ) : (
+                    <button
+                        onClick={() => setDesktopCollapsed(p => !p)}
+                        className="p-2 rounded-lg transition-colors"
+                        style={{ color: 'var(--color-text-muted)' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-sidebar-hover)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                        aria-label={desktopCollapsed ? 'Expandir menú' : 'Colapsar menú'}
+                    >
+                        <ChevronLeft
+                            size={18}
+                            style={{ transform: desktopCollapsed ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s' }}
+                        />
+                    </button>
+                )}
+            </div>
 
-                <div className="p-4 text-[10px] text-gray-600 text-center border-t border-dark-800">
+            {/* User Info */}
+            {user && (!desktopCollapsed || isMobile) && (
+                <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--color-sidebar-border)' }}>
+                    <div
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors"
+                        style={{ background: 'var(--color-bg-base)' }}
+                    >
+                        <div
+                            className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-sm"
+                            style={{ background: 'var(--color-gold-500)', color: '#000' }}
+                        >
+                            <UserIcon size={18} />
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                            <p className="text-sm font-bold truncate" style={{ color: 'var(--color-text-primary)' }}>{user.username}</p>
+                            <p className="text-[10px] uppercase tracking-widest font-extrabold" style={{ color: 'var(--color-gold-600)' }}>
+                                {user.role}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Collapsed User avatar */}
+            {user && desktopCollapsed && !isMobile && (
+                <div className="flex justify-center py-3 border-b" style={{ borderColor: 'var(--color-sidebar-border)' }}>
+                    <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                        style={{ background: 'var(--color-gold-500)', color: '#000' }}
+                        title={user.username}
+                    >
+                        <UserIcon size={18} />
+                    </div>
+                </div>
+            )}
+
+            {/* Nav */}
+            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto custom-scrollbar">
+                {navItems.map((item) => (
+                    <NavLink
+                        key={item.to}
+                        to={item.to}
+                        end={item.end}
+                        className={() =>
+                            `flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-all duration-200 whitespace-nowrap
+                            ${desktopCollapsed && !isMobile ? 'justify-center' : ''}`
+                        }
+                        style={({ isActive }) => isActive
+                            ? {
+                                background: 'linear-gradient(135deg, var(--color-gold-400) 0%, var(--color-gold-600) 100%)',
+                                color: '#030712',
+                                boxShadow: '0 4px 12px rgba(245,158,11,0.25)'
+                            }
+                            : {
+                                color: 'var(--color-sidebar-text)'
+                            }
+                        }
+                        onMouseEnter={e => {
+                            const target = e.currentTarget;
+                            if (!target.classList.contains('active')) {
+                                target.style.background = 'var(--color-sidebar-hover)';
+                                target.style.color = 'var(--color-text-primary)';
+                            }
+                        }}
+                        onMouseLeave={e => {
+                            const target = e.currentTarget;
+                            if (!target.classList.contains('active')) {
+                                target.style.background = 'transparent';
+                                target.style.color = 'var(--color-sidebar-text)';
+                            }
+                        }}
+                        title={desktopCollapsed && !isMobile ? item.label : undefined}
+                    >
+                        <span className="shrink-0">{item.icon}</span>
+                        {(!desktopCollapsed || isMobile) && <span className="truncate text-sm">{item.label}</span>}
+                    </NavLink>
+                ))}
+            </nav>
+
+            {/* Bottom actions */}
+            <div className="px-3 py-3 border-t space-y-1" style={{ borderColor: 'var(--color-sidebar-border)' }}>
+                {/* Theme toggle */}
+                <button
+                    onClick={toggleTheme}
+                    className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all font-medium
+                        ${desktopCollapsed && !isMobile ? 'justify-center' : ''}`}
+                    style={{ color: 'var(--color-sidebar-text)' }}
+                    onMouseEnter={e => {
+                        e.currentTarget.style.background = 'var(--color-sidebar-hover)';
+                        e.currentTarget.style.color = 'var(--color-text-primary)';
+                    }}
+                    onMouseLeave={e => {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.color = 'var(--color-sidebar-text)';
+                    }}
+                >
+                    <span className="shrink-0">
+                        {isDark ? <Sun size={20} /> : <Moon size={20} />}
+                    </span>
+                    {(!desktopCollapsed || isMobile) && (
+                        <span className="text-sm">{isDark ? 'Tema Claro' : 'Tema Oscuro'}</span>
+                    )}
+                </button>
+
+                {/* Logout */}
+                <button
+                    onClick={handleLogout}
+                    className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all font-medium
+                        ${desktopCollapsed && !isMobile ? 'justify-center' : ''}`}
+                    style={{ color: 'var(--color-sidebar-text)' }}
+                    onMouseEnter={e => {
+                        e.currentTarget.style.background = 'var(--color-status-err-bg)';
+                        e.currentTarget.style.color = 'var(--color-status-err-text)';
+                    }}
+                    onMouseLeave={e => {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.color = 'var(--color-sidebar-text)';
+                    }}
+                >
+                    <span className="shrink-0"><LogOut size={20} /></span>
+                    {(!desktopCollapsed || isMobile) && <span className="text-sm">Cerrar Sesión</span>}
+                </button>
+            </div>
+
+            {(!desktopCollapsed || isMobile) && (
+                <div className="px-4 pb-3 text-[10px] text-center" style={{ color: 'var(--color-text-muted)' }}>
                     © {new Date().getFullYear()} Leader Gym Admin
                 </div>
+            )}
+        </div>
+    );
+
+    const sidebarWidth = desktopCollapsed ? 72 : 240;
+
+    return (
+        <div
+            className="flex min-h-screen"
+            style={{ background: 'var(--color-bg-base)', color: 'var(--color-text-primary)' }}
+        >
+            {/* ── DESKTOP SIDEBAR ── */}
+            <aside
+                className="hidden md:flex flex-col fixed inset-y-0 left-0 z-30 shadow-xl transition-all duration-300 ease-in-out overflow-hidden"
+                style={{ width: sidebarWidth, borderRight: 'none' }}
+            >
+                {sidebarContent(false)}
             </aside>
 
-            {/* Main Content Area */}
-            <main className={`flex-1 transition-all duration-300 ease-in-out p-8 ${isHidden ? 'ml-0' : 'ml-64'}`}>
-                <div className={`max-w-6xl mx-auto ${isHidden ? 'pt-14' : ''}`}>
-                    <Outlet />
-                </div>
-            </main>
+            {/* ── MOBILE OVERLAY + DRAWER ── */}
+            {mobileOpen && (
+                <div
+                    className="sidebar-overlay md:hidden"
+                    onClick={() => setMobileOpen(false)}
+                    aria-hidden="true"
+                />
+            )}
+            <aside
+                className={`fixed inset-y-0 left-0 z-50 w-72 md:hidden flex flex-col shadow-2xl transition-transform duration-300 ease-in-out
+                    ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
+            >
+                {sidebarContent(true)}
+            </aside>
 
-            {/* Global Toaster for notifications */}
+            {/* ── MAIN CONTENT ── */}
+            <div
+                className="flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out"
+                style={{ marginLeft: window.innerWidth >= 768 ? sidebarWidth : 0 }}
+            >
+                {/* Mobile top bar */}
+                <header
+                    className="md:hidden sticky top-0 z-20 flex items-center justify-between px-4 py-3 border-b shadow-sm theme-transition"
+                    style={{
+                        background: 'var(--color-sidebar-bg)',
+                        borderColor: 'var(--color-sidebar-border)'
+                    }}
+                >
+                    <button
+                        onClick={() => setMobileOpen(true)}
+                        className="p-2 rounded-lg transition-colors"
+                        style={{ color: 'var(--color-sidebar-text)' }}
+                        aria-label="Abrir menú"
+                    >
+                        <Menu size={22} />
+                    </button>
+                    <div className="text-lg font-black select-none" style={{ color: 'var(--color-text-primary)' }}>
+                        <span style={{ color: 'var(--color-gold-400)' }}>LEADER</span> GYM
+                    </div>
+                    <button
+                        onClick={toggleTheme}
+                        className="p-2 rounded-lg transition-colors"
+                        style={{ color: 'var(--color-sidebar-text)' }}
+                        aria-label="Cambiar tema"
+                    >
+                        {isDark ? <Sun size={20} /> : <Moon size={20} />}
+                    </button>
+                </header>
+
+                <main className="flex-1 p-4 md:p-8">
+                    <div className="max-w-5xl mx-auto">
+                        <Outlet />
+                    </div>
+                </main>
+            </div>
+
+            {/* Toaster */}
             <Toaster
-                theme="dark"
+                theme={theme}
                 position="top-right"
                 toastOptions={{
-                    style: {
-                        background: '#1F2937',
-                        border: '1px solid #374151',
-                        color: '#F9FAFB'
-                    },
-                    className: 'font-sans'
+                    style: isDark
+                        ? { background: '#1F2937', border: '1px solid #374151', color: '#F9FAFB' }
+                        : { background: '#FFFFFF', border: '1px solid #E2E8F0', color: '#0F172A' },
+                    className: 'font-sans text-sm'
                 }}
+                richColors
             />
         </div>
     );

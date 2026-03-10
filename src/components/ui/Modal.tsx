@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from './Button';
 
@@ -8,43 +8,75 @@ interface ModalProps {
     title: string;
     children: React.ReactNode;
     footer?: React.ReactNode;
+    size?: 'sm' | 'md' | 'lg';
 }
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer }) => {
+export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer, size = 'md' }) => {
+    // ESC key to close
+    useEffect(() => {
+        if (!isOpen) return;
+        const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+        document.addEventListener('keydown', handler);
+        return () => document.removeEventListener('keydown', handler);
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
 
+    const maxWidths = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-lg' };
+
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+            onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+        >
             <div
-                className="bg-dark-900 border border-dark-700 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+                className={`w-full ${maxWidths[size]} rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200`}
+                style={{
+                    background: 'var(--color-modal-bg)',
+                    border: '1px solid var(--color-border-subtle)',
+                }}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-dark-800">
-                    <h3 className="text-xl font-bold text-white">{title}</h3>
+                <div
+                    className="flex items-center justify-between px-6 py-4"
+                    style={{ borderBottom: '1px solid var(--color-border)' }}
+                >
+                    <h3
+                        className="text-lg font-bold"
+                        style={{ color: 'var(--color-text-primary)' }}
+                    >
+                        {title}
+                    </h3>
                     <button
                         onClick={onClose}
-                        className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-dark-800"
+                        className="p-2 rounded-lg transition-colors"
+                        style={{ color: 'var(--color-text-muted)' }}
+                        onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-text-primary)')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-text-muted)')}
+                        aria-label="Cerrar"
                     >
-                        <X size={20} />
+                        <X size={18} />
                     </button>
                 </div>
 
                 {/* Body */}
-                <div className="px-6 py-8">
+                <div className="px-6 py-6" style={{ color: 'var(--color-text-primary)' }}>
                     {children}
                 </div>
 
                 {/* Footer */}
-                {footer ? (
-                    <div className="px-6 py-4 bg-dark-950/50 flex justify-end gap-3">
-                        {footer}
-                    </div>
-                ) : (
-                    <div className="px-6 py-4 bg-dark-950/50 flex justify-end">
+                <div
+                    className="px-6 py-4 flex justify-end gap-3"
+                    style={{ background: 'var(--color-bg-base)', borderTop: '1px solid var(--color-border)' }}
+                >
+                    {footer ?? (
                         <Button onClick={onClose} variant="secondary">Cerrar</Button>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </div>
     );

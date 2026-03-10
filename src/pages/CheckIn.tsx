@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
+import { CheckCircle2, XCircle, AlertTriangle, UserCheck } from 'lucide-react';
 import { checkInService } from '../services/checkInService';
 import { toast } from 'sonner';
-import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 import { CheckInResponseDTO } from '../types';
 
 const SUCCESS_SOUND_URL = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3';
@@ -29,20 +29,18 @@ export const CheckIn: React.FC = () => {
 
     const playAudio = (url: string) => {
         const audio = new Audio(url);
-        audio.play().catch(err => console.error("Error playing audio:", err));
+        audio.play().catch(err => console.error('Error playing audio:', err));
     };
 
     const translateError = (msg: string): string => {
         const lowerMsg = msg.toLowerCase();
         if (lowerMsg.includes('already checked in')) return 'El socio ya ingresó el día de hoy.';
-        if (lowerMsg.includes('not found')) return 'Socio no encontrado. Verifique el DNI.';
-
+        if (lowerMsg.includes('not found')) return 'Socio no encontrado. Verificá el DNI.';
         if (lowerMsg.includes('partial payment')) {
             const match = msg.match(/is: ([\d.,]+)/);
             const debt = match ? match[1] : '';
             return `El socio no puede ingresar porque debe parte de la cuota.${debt ? ` Monto restante: $${debt}` : ''}`;
         }
-
         if (lowerMsg.includes('not pay') || lowerMsg.includes('payment') || lowerMsg.includes('has not paid'))
             return 'Ingreso denegado: El socio no tiene el pago de la cuota al día.';
         if (lowerMsg.includes('weekly visit limit')) return 'Ingreso denegado: Se pasó del límite de visitas semanales de su plan.';
@@ -62,7 +60,7 @@ export const CheckIn: React.FC = () => {
             setCheckInResult(result);
             setLastCheckIn('success');
             setErrorMessage('');
-            toast.success(`Ingreso registrado: ${result.memberName}`, { duration: 20000 });
+            toast.success(`Ingreso registrado: ${result.memberName}`, { duration: 10000 });
             setDni('');
         } catch (err: any) {
             playAudio(ERROR_SOUND_URL);
@@ -71,37 +69,44 @@ export const CheckIn: React.FC = () => {
             setLastCheckIn('error');
             setCheckInResult(null);
             setErrorMessage(translatedMsg);
-            toast.error(translatedMsg, { duration: 20000 });
+            toast.error(translatedMsg, { duration: 10000 });
         } finally {
             setLoading(false);
         }
     };
 
+    const isWarning = checkInResult && checkInResult.dayToExpirationMembership <= 5;
+
     return (
-        <div className="max-w-2xl mx-auto space-y-8">
+        <div className="max-w-xl mx-auto space-y-6">
+            {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold">Check-In de Socios</h1>
-                <p className="text-gray-400 mt-2">Ingrese el DNI del socio para registrar su entrada al gimnasio.</p>
+                <h1 className="text-3xl font-black tracking-tight" style={{ color: 'var(--color-text-primary)' }}>
+                    Check-In de Socios
+                </h1>
+                <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                    Ingresá el DNI del socio para registrar su entrada al gimnasio.
+                </p>
             </div>
 
-            <Card className="border-gold-500/20 shadow-[0_0_20px_rgba(245,158,11,0.1)]">
-                <CardContent className="pt-8">
-                    <form onSubmit={handleCheckIn} className="space-y-6">
-                        <div className="flex gap-4 items-end">
-                            <div className="flex-1">
-                                <Input
-                                    label="DNI del Socio"
-                                    placeholder="Ingrese el DNI sin puntos"
-                                    value={dni}
-                                    onChange={(e) => setDni(e.target.value)}
-                                    className="text-2xl py-4 h-16 font-mono tracking-widest text-center"
-                                    autoFocus
-                                />
-                            </div>
-                        </div>
+            {/* Form Card */}
+            <Card style={{ borderColor: 'rgba(245,158,11,0.25)', boxShadow: '0 0 24px rgba(245,158,11,0.08)' }}>
+                <CardContent className="pt-6 pb-6">
+                    <form onSubmit={handleCheckIn} className="space-y-4">
+                        <Input
+                            label="DNI del Socio"
+                            placeholder="Ej: 38425871"
+                            value={dni}
+                            onChange={(e) => setDni(e.target.value.replace(/\D/g, ''))}
+                            icon={<UserCheck size={18} />}
+                            className="text-xl py-4 h-14 font-mono tracking-widest text-center"
+                            autoFocus
+                            maxLength={10}
+                            inputMode="numeric"
+                        />
                         <Button
                             type="submit"
-                            className="w-full h-16 text-xl bg-gold-600 hover:bg-gold-700 text-black font-bold"
+                            className="w-full h-12 text-base font-bold"
                             isLoading={loading}
                             disabled={!dni.trim()}
                         >
@@ -111,43 +116,52 @@ export const CheckIn: React.FC = () => {
                 </CardContent>
             </Card>
 
+            {/* Result: Success */}
             {lastCheckIn === 'success' && checkInResult && (
-                <div className={`flex flex-col items-center justify-center p-8 border rounded-xl animate-in zoom-in-95 duration-300 ${checkInResult.dayToExpirationMembership <= 5
-                        ? 'bg-yellow-900/20 border-yellow-500/50 text-yellow-500'
-                        : 'bg-green-900/20 border-green-500/30 text-green-400'
-                    }`}>
-                    {checkInResult.dayToExpirationMembership <= 5 ? (
-                        <AlertTriangle size={64} className="mb-4" />
-                    ) : (
-                        <CheckCircle2 size={64} className="mb-4" />
-                    )}
+                <div
+                    className="flex flex-col items-center justify-center p-8 rounded-2xl text-center animate-in zoom-in-95 duration-300"
+                    style={isWarning
+                        ? { background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.4)', color: '#CA8A04' }
+                        : { background: 'var(--color-status-ok-bg)', border: '1px solid rgba(74,222,128,0.3)', color: 'var(--color-status-ok-text)' }
+                    }
+                >
+                    {isWarning
+                        ? <AlertTriangle size={56} className="mb-4" />
+                        : <CheckCircle2 size={56} className="mb-4" />
+                    }
 
-                    <h2 className="text-3xl font-black uppercase mb-1 tracking-wider text-center">
-                        ¡BIENVENIDO/A!
+                    <h2 className="text-2xl font-black uppercase tracking-wider mb-1">
+                        ¡Bienvenido/a!
                     </h2>
-                    <h3 className="text-2xl font-bold mb-4 text-white text-center">
+                    <h3 className="text-xl font-bold mb-3" style={{ color: 'var(--color-text-primary)' }}>
                         {checkInResult.memberName}
                     </h3>
 
-                    <div className="text-center space-y-2 mt-2">
-                        {checkInResult.dayToExpirationMembership <= 5 ? (
-                            <p className="text-xl font-bold px-4 py-2 bg-yellow-500/20 rounded-lg">
-                                ¡Atención! Te quedan {checkInResult.dayToExpirationMembership} {checkInResult.dayToExpirationMembership === 1 ? 'día' : 'días'} para tu próximo vencimiento.
-                            </p>
-                        ) : (
-                            <p className="text-lg">
-                                El pase está activo. Te quedan {checkInResult.dayToExpirationMembership} días.
-                            </p>
-                        )}
-                    </div>
+                    {isWarning ? (
+                        <p
+                            className="text-sm font-semibold px-4 py-2 rounded-lg"
+                            style={{ background: 'rgba(234,179,8,0.15)' }}
+                        >
+                            ⚠️ Te quedan {checkInResult.dayToExpirationMembership}{' '}
+                            {checkInResult.dayToExpirationMembership === 1 ? 'día' : 'días'} para el próximo vencimiento.
+                        </p>
+                    ) : (
+                        <p className="text-sm">
+                            Pase activo — {checkInResult.dayToExpirationMembership} días restantes.
+                        </p>
+                    )}
                 </div>
             )}
 
+            {/* Result: Error */}
             {lastCheckIn === 'error' && (
-                <div className="flex flex-col items-center justify-center p-8 bg-red-900/20 border border-red-500/30 rounded-xl text-red-500 animate-in zoom-in-95 duration-300">
-                    <XCircle size={64} className="mb-4" />
-                    <h2 className="text-2xl font-bold uppercase tracking-wider">Ingreso Denegado</h2>
-                    <p className="text-lg font-medium mt-2 text-center">{errorMessage}</p>
+                <div
+                    className="flex flex-col items-center justify-center p-8 rounded-2xl text-center animate-in zoom-in-95 duration-300"
+                    style={{ background: 'var(--color-status-err-bg)', border: '1px solid rgba(239,68,68,0.3)', color: 'var(--color-status-err-text)' }}
+                >
+                    <XCircle size={56} className="mb-4" />
+                    <h2 className="text-xl font-bold uppercase tracking-wider mb-2">Ingreso Denegado</h2>
+                    <p className="text-sm font-medium">{errorMessage}</p>
                 </div>
             )}
         </div>
