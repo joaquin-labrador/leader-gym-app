@@ -113,3 +113,8 @@ export interface PaymentHistoryResponseDTO {
     paymentMethod: string;
     paymentDate: string;
 }
+
+export interface CheckInResponseDTO {
+    memberName: string;
+    dayToExpirationMembership: number;
+}

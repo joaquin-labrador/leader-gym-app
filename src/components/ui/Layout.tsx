@@ -26,7 +26,7 @@ export const Layout: React.FC = () => {
         { to: '/plans', label: 'Planes', icon: <Dumbbell size={20} /> },
         { to: '/payments', label: 'Pagos de Plan', icon: <CreditCard size={20} /> },
         { to: '/extra-payments', label: 'Pagos Sueltos', icon: <Banknote size={20} /> },
-        { to: '/receipts', label: 'Recibos', icon: <History size={20} /> },
+        { to: '/receipts', label: 'Historial de Ingresos', icon: <History size={20} /> },
         { to: '/payment-history', label: 'Arqueo/Caja', icon: <FileText size={20} /> },
     ];
 
