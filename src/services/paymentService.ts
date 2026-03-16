@@ -7,7 +7,13 @@ export const paymentService = {
     },
 
     registerExtraPayment: async (data: ExtraPaymentRequest): Promise<void> => {
-        await apiClient.post('/api/payment/extra', data);
+        const payload = {
+            memberDni: data.dni,
+            amount: data.amount,
+            paymentMethod: data.paymentMethod,
+            description: data.description
+        };
+        await apiClient.post('/api/other-payments', payload);
     },
 
     getPaymentHistory: async (dni: string): Promise<PaymentHistoryItem[]> => {
