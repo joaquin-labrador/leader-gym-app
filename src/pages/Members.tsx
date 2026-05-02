@@ -35,6 +35,7 @@ export const Members: React.FC = () => {
 
     const [showForm, setShowForm] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [originalDni, setOriginalDni] = useState('');
     const [formData, setFormData] = useState<CreateMemberRequest>({
         dni: '', firstName: '', lastName: '', phoneNumber: '', email: '', planId: 0, birthDate: ''
     });
@@ -85,12 +86,14 @@ export const Members: React.FC = () => {
     };
 
     const handleOpenCreate = () => {
+        setOriginalDni('');
         setFormData({ dni: '', firstName: '', lastName: '', phoneNumber: '', email: '', planId: plans[0]?.id || 0, birthDate: '' });
         setIsEditing(false);
         setShowForm(true);
     };
 
     const handleOpenEdit = (m: Member) => {
+        setOriginalDni(m.dni);
         let birthDateStr = '';
         if (m.birthDate) {
             if (Array.isArray(m.birthDate)) {
@@ -139,7 +142,8 @@ export const Members: React.FC = () => {
         e.preventDefault();
         try {
             if (isEditing) {
-                await memberService.updateMember(formData.dni, {
+                await memberService.updateMember(originalDni, {
+                    dni: formData.dni,
                     firstName: formData.firstName,
                     lastName: formData.lastName,
                     phoneNumber: formData.phoneNumber,
@@ -180,7 +184,6 @@ export const Members: React.FC = () => {
                                 label="DNI *"
                                 value={formData.dni}
                                 onChange={(e) => setFormData({ ...formData, dni: e.target.value })}
-                                disabled={isEditing}
                                 placeholder="Ej: 38425871"
                                 required
                             />

@@ -43,6 +43,7 @@ export interface UpdateMemberRequest {
     email?: string;
     planId: number;
     birthDate: string;
+    dni: string;
 }
 
 export interface PageMember {
