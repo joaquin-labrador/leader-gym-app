@@ -92,7 +92,9 @@ export const Payments: React.FC = () => {
 
     const formatExpiration = (date: Date | null) => {
         if (!date) return '';
-        return date.toLocaleDateString('es-AR', {
+        const displayDate = new Date(date);
+        displayDate.setDate(displayDate.getDate() - 1);
+        return displayDate.toLocaleDateString('es-AR', {
             timeZone: 'America/Argentina/Buenos_Aires',
             day: '2-digit',
             month: 'long',
