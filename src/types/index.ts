@@ -59,6 +59,7 @@ export interface PaymentRequest {
     planId: number;
     amount: number;
     paymentMethod: string;
+    paymentDate?: string;
 }
 
 export interface ExtraPaymentRequest {
